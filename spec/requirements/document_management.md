@@ -4,7 +4,6 @@ Document Management System
 - [ ] Display documents in a table format with columns:
   -  Title (first 50 characters of content)
   -  CEFR Level
-  -  Prompt Type
   -  Creation Date
 - [ ] Implement sortable columns functionality
 - [ ] Add click handler to load document in editor

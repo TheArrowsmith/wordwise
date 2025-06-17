@@ -4,13 +4,14 @@ Text Editor Implementation
 - [ ] Set up Draft.js editor with bold, italic, and list formatting options
 - [ ] Implement 500ms debounce for text input using use-debounce
 - [ ] Create Next.js API route for OpenAI text analysis
-- [ ] Implement error highlighting with red underlines
-   - [ ] Apply `ERROR_RED` inline style for errors (CSS: `text-decoration: underline red`).
-- [ ] Handle OpenAI API response parsing for errors and fluency suggestions
+- [ ] Implement suggestion highlighting with underlines
+   - [ ] Suggestions are underlined according to their category: red for spelling, orange for grammar, yellow for punctuation, blue for style and purple for fluency.
+- [ ] Handle OpenAI API response parsing for suggestions
 - [ ] Writing feedback requests ONLY trigger when text actually changes, not repeatedly
 - [ ] Feedback remains consistent - once received for specific text, it doesn't change until text is modified
 - [ ] Prevent feedback from rewriting itself with slightly different wording for the same errors
-- [ ] Use 'prompts/generate_writing_prompt.txt' to generate a new writing prompt when requested.
+- [ ] Randomly choose a prompt for the user's CEFR level from the `prompts` table.
+- [ ] Display a 'refresh' icon (heroicon `arrows-path`) next to the prompt. Clicking it randomly selects a new prompt from the `prompts` table.
 - [ ] Autosaving:
   - [ ] When I make my first edit to the blank editor, a new document is saved to the backend.
   - [ ] The document is automatically saved again on subsequent edits.
@@ -19,8 +20,6 @@ Text Editor Implementation
   - [ ] Autosave ONLY triggers when actual content changes occur, not in loops
   - [ ] Autosave stops after saving and doesn't continue indefinitely
 - [ ] Implement auto-save to Supabase documents table on each debounced change
-- [ ] Store document metadata: content, prompt_id, cefr_level, prompt_type, created_at, updated_at
+- [ ] Store document metadata: content, prompt_id, created_at, updated_at
 - [ ] Handle API failures gracefully (show "Feedback unavailable" message)
 - [ ] Typed text in textarea is readable (sufficient contrast between text and background)
-- [ ] Fix authentication issue with API routes by implementing proper server-side Supabase client with request headers and adding auth tokens to frontend fetch calls
-- [ ] Text editor allows normal typing without erasing characters as user types

@@ -45,38 +45,12 @@ ESL students struggle with English writing due to limited access to CEFR-tailore
 
 ## 4. Functional Requirements
 
-### 4.1 Authentication
-- **F1.1**: Users sign up with email/password via Supabase Auth.
-- **F1.2**: Users log in with email/password.
-- **F1.3**: Users log out.
-- **F1.4**: Users reset passwords via email link.
-- **Acceptance Criteria**:
-  - Sign-up creates a user profile with email and CEFR level.
-  - Login redirects to the editor page.
-  - Logout clears session and redirects to login page.
-  - Password reset sends a secure email link.
-
-### 4.2 User Profile
-- **F2.1**: Users select CEFR level (A1–C2) during sign-up or via profile settings.
-- **F2.2**: CEFR level is stored in Supabase and used for prompt generation.
-- **Acceptance Criteria**:
-  - CEFR level dropdown shows A1, A2, B1, B2, C1, C2.
-  - Selected level persists across sessions.
-  - Default level is B1.
-
-### 4.3 Writing Prompts
 - **F3.1**: A single-sentence, CEFR-tailored prompt (question or instruction) is displayed above the editor on page load.
-- **F3.2**: Users click a “Refresh” button (with `arrow-path` Heroicon) to generate a new prompt.
-- **F3.3**: Prompts are generated via OpenAI API, varied (e.g., narrative, descriptive, argumentative), and stored in Supabase.
-- **F3.4**: Initial implementation uses only OpenAI-generated prompts.
-- **OpenAI Prompt for Prompt Generation**:
-  ```
-  Generate a single-sentence writing prompt for an ESL student at CEFR level {cefr_level}. The prompt should be either a question or an instruction, varied in type (e.g., narrative, descriptive, argumentative), and appropriate for the level's vocabulary and grammar complexity. Return the prompt as plain text.
-  ```
-  - Example: For B1: “Describe your favorite place to relax.”
+- **F3.2**: Users click a “Refresh” button to generate a new prompt.
+- **F3.3**: Prompts are randomly selected from the `prompts` tale.
 - **Acceptance Criteria**:
   - Prompt is a single sentence, CEFR-appropriate.
-  - “Refresh” generates a new prompt instantly, displayed with `arrow-path` Heroicon.
+  - “Refresh” generates a new prompt instantly
   - Prompts are stored in `prompts` table with `id`, `text`, `cefr_level`, `created_at`.
 
 ### 4.4 Text Editor
@@ -89,7 +63,9 @@ ESL students struggle with English writing due to limited access to CEFR-tailore
 - **F4.7**: Suggestions are deduplicated using `text_hash` and `rule_id`, with `draft-js-diff` for change detection.
 - **OpenAI Prompt for Text Checking**:
   ```
-  You are an ESL writing assistant for a CEFR level {cefr_level} student. Analyze the following text for spelling, grammar, punctuation, and style errors, and provide fluency suggestions to make the text more natural. Return results in JSON format with categorized suggestions, including specific changes (e.g., "Change 'is' to 'are'"), plain-English explanations, offsets, lengths, and rule identifiers. Do not check for tone.
+  You are an ESL writing assistant for a CEFR level {cefr_level} student. Analyze the following text for spelling, grammar, punctuation, and style errors, and provide fluency suggestions to make the text more natural. Return results in JSON format with categorized suggestions, including specific changes (e.g., "Change 'is' to 'are'"), plain-English explanations, offsets, lengths, and rule identifiers.
+  
+  Each response 'category' is one of 'SPELLING', 'GRAMMAR', 'PUNCTUATION', 'STYLE', 'FLUENCY'.
 
   Text: {text}
 
@@ -159,48 +135,8 @@ ESL students struggle with English writing due to limited access to CEFR-tailore
 - **Privacy**: User data (documents, suggestions) stored securely in Supabase. GDPR/CCPA not prioritized.
 
 ## 6. Data Model (Supabase Schema)
-```sql
-CREATE TABLE users (
-  id UUID PRIMARY KEY,
-  email TEXT UNIQUE NOT NULL,
-  cefr_level TEXT CHECK (cefr_level IN ('A1', 'A2', 'B1', 'B2', 'C1', 'C2')) DEFAULT 'A1',
-  created_at TIMESTAMP DEFAULT NOW()
-);
 
-CREATE TABLE prompts (
-  id UUID PRIMARY KEY,
-  text TEXT NOT NULL,
-  cefr_level TEXT CHECK (cefr_level IN ('A1', 'A2', 'B1', 'B2', 'C1', 'C2')),
-  created_at TIMESTAMP DEFAULT NOW()
-);
-
-CREATE TABLE documents (
-  id UUID PRIMARY KEY,
-  user_id UUID REFERENCES users(id),
-  content TEXT NOT NULL, -- JSON string of Draft.js ContentState
-  prompt_id UUID REFERENCES prompts(id),
-  cefr_level TEXT CHECK (cefr_level IN ('A1', 'A2', 'B1', 'B2', 'C1', 'C2')),
-  prompt_type TEXT, -- e.g., 'narrative', 'argumentative'
-  created_at TIMESTAMP DEFAULT NOW(),
-  updated_at TIMESTAMP DEFAULT NOW()
-);
-
-CREATE TABLE suggestions (
-  id UUID PRIMARY KEY,
-  document_id UUID REFERENCES documents(id),
-  category TEXT CHECK (category IN ('SPELLING', 'GRAMMAR', 'PUNCTUATION', 'STYLE', 'FLUENCY')),
-  message TEXT NOT NULL, -- e.g., "Change 'is' to 'are'"
-  explanation TEXT NOT NULL, -- e.g., "Use 'are' for plural subjects"
-  offset INTEGER NOT NULL,
-  length INTEGER NOT NULL,
-  suggestions TEXT[], -- e.g., ['are']
-  rule_id TEXT NOT NULL, -- e.g., 'SUBJECT_VERB_AGREEMENT'
-  text_hash TEXT NOT NULL, -- MD5 hash of affected text
-  created_at TIMESTAMP DEFAULT NOW(),
-  is_active BOOLEAN DEFAULT TRUE
-);
-CREATE INDEX idx_suggestions_doc_hash ON suggestions (document_id, text_hash);
-```
+See `spec/schema.sql`
 
 ## 7. Technical Architecture
 - **Frontend**: React, Next.js, Tailwind CSS, @heroicons/react (`arrow-path`), draft-js, draft-js-diff, use-debounce.
