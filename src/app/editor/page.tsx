@@ -1,9 +1,9 @@
 'use client';
 
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { Editor, EditorState, RichUtils, ContentState, convertToRaw, convertFromRaw } from 'draft-js';
+import { Editor, EditorState, RichUtils, ContentState, convertToRaw, convertFromRaw, CompositeDecorator, Modifier } from 'draft-js';
 import { useDebounce } from 'use-debounce';
-import { ArrowPathIcon } from '@heroicons/react/24/outline';
+import { ArrowPathIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { 
   BoldIcon, 
   ItalicIcon, 
@@ -16,16 +16,30 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Document, Prompt, Profile } from '@/types';
 import 'draft-js/dist/Draft.css';
+import 'placeholder-loading/dist/css/placeholder-loading.min.css';
+
+interface FeedbackSuggestion {
+  id: string;
+  category: 'spelling' | 'grammar' | 'fluency' | 'clarity';
+  message: string;
+  explanation: string;
+  suggested_fix?: string;
+  offset: number;
+  length: number;
+}
 
 export default function EditorPage() {
   const [editorState, setEditorState] = useState(() => EditorState.createEmpty());
   const [prompt, setPrompt] = useState<Prompt | null>(null);
+  const [promptLoading, setPromptLoading] = useState(true);
   const [currentDocument, setCurrentDocument] = useState<Document | null>(null);
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<Pick<Profile, 'cefr_level'> | null>(null);
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'idle'>('idle');
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [feedbackSuggestions, setFeedbackSuggestions] = useState<FeedbackSuggestion[]>([]);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   
   const searchParams = useSearchParams();
   const documentId = searchParams.get('id');
@@ -39,6 +53,58 @@ export default function EditorPage() {
 
   // Debounced text for autosaving
   const [debouncedText] = useDebounce(getCurrentText(), 500);
+
+  // Create decorator for feedback highlighting
+  const createDecorator = () => {
+    const feedbackStrategy = (contentBlock: any, callback: any) => {
+      const text = contentBlock.getText();
+      feedbackSuggestions.forEach(suggestion => {
+        const start = suggestion.offset;
+        const end = start + suggestion.length;
+        if (start >= 0 && end <= text.length) {
+          callback(start, end);
+        }
+      });
+    };
+
+    const FeedbackSpan = (props: any) => {
+      const text = props.children[0].props.text;
+      const offset = props.start;
+      const suggestion = feedbackSuggestions.find(s => s.offset === offset);
+      
+      if (!suggestion) return <span>{props.children}</span>;
+
+      const colorMap = {
+        spelling: 'border-b-2 border-yellow-400',
+        grammar: 'border-b-2 border-red-400',
+        fluency: 'border-b-2 border-blue-400',
+        clarity: 'border-b-2 border-green-400'
+      };
+
+      return (
+        <span 
+          className={colorMap[suggestion.category]}
+          title={suggestion.message}
+        >
+          {props.children}
+        </span>
+      );
+    };
+
+    return new CompositeDecorator([
+      {
+        strategy: feedbackStrategy,
+        component: FeedbackSpan,
+      },
+    ]);
+  };
+
+  // Update editor decorator when feedback changes
+  useEffect(() => {
+    const decorator = feedbackSuggestions.length > 0 ? createDecorator() : null;
+    const newEditorState = EditorState.set(editorState, { decorator });
+    setEditorState(newEditorState);
+  }, [feedbackSuggestions]);
 
   // Get user and profile
   useEffect(() => {
@@ -81,6 +147,7 @@ export default function EditorPage() {
   }, [debouncedText, hasUnsavedChanges, user, isInitialLoad]);
 
   const loadDocument = async (docId: string) => {
+    setPromptLoading(true);
     try {
       const { data, error } = await supabase
         .from('documents')
@@ -114,12 +181,14 @@ export default function EditorPage() {
       console.error('Error loading document:', error);
       loadRandomPrompt(); // Fallback to random prompt
     } finally {
+      setPromptLoading(false);
       setIsInitialLoad(false);
     }
   };
 
   const loadRandomPrompt = async () => {
     if (!profile) return;
+    setPromptLoading(true);
 
     try {
       const { data, error } = await supabase
@@ -136,6 +205,7 @@ export default function EditorPage() {
     } catch (error) {
       console.error('Error loading prompt:', error);
     } finally {
+      setPromptLoading(false);
       setIsInitialLoad(false);
     }
   };
@@ -172,9 +242,6 @@ export default function EditorPage() {
           })
           .eq('id', currentDocument.id);
 
-        console.log(2)
-        console.log(error)
-
         if (error) throw error;
       } else {
         // Create new document
@@ -187,9 +254,6 @@ export default function EditorPage() {
           })
           .select()
           .single();
-
-        console.log(1)
-        console.log(error)
 
         if (error) throw error;
         if (data) {
@@ -209,6 +273,42 @@ export default function EditorPage() {
     } catch (error) {
       console.error('Error saving document:', error);
       setSaveStatus('idle');
+    }
+  };
+
+  const handleAnalyzeText = async () => {
+    if (!user || !profile || !currentDocument) return;
+    
+    const text = getCurrentText();
+    if (!text.trim()) return;
+
+    setIsAnalyzing(true);
+    
+    try {
+      const response = await fetch('/api/analyze-text', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          text,
+          cefrLevel: profile.cefr_level,
+          documentId: currentDocument.id
+        }),
+      });
+
+      if (!response.ok) throw new Error('Failed to analyze text');
+      
+      const data = await response.json();
+      
+      // Store suggestions in React state only
+      if (data.suggestions) {
+        setFeedbackSuggestions(data.suggestions);
+      }
+    } catch (error) {
+      console.error('Error analyzing text:', error);
+    } finally {
+      setIsAnalyzing(false);
     }
   };
 
@@ -243,6 +343,7 @@ export default function EditorPage() {
     setEditorState(EditorState.createEmpty());
     setHasUnsavedChanges(false);
     setSaveStatus('idle');
+    setFeedbackSuggestions([]);
     window.history.replaceState({}, '', '/editor');
   };
 
@@ -303,7 +404,6 @@ export default function EditorPage() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between h-16">
               <div className="flex space-x-8 items-center">
-                <h1 className="text-xl font-semibold">Arrowsmith</h1>
                 <Link 
                   href="/editor" 
                   className="bg-gray-900 px-3 py-2 rounded-md text-sm font-medium"
@@ -342,84 +442,138 @@ export default function EditorPage() {
         </nav>
 
         {/* Main Content */}
-        <main className="max-w-4xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-          {/* Prompt Section */}
-          {prompt && (
-            <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                      {prompt.cefr_level}
-                    </span>
-                    <span className="text-gray-500 text-sm">Writing Prompt</span>
+        <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-3 gap-6">
+            {/* Editor Column */}
+            <div className="col-span-2 space-y-6">
+              {/* Prompt Section */}
+              <div className="bg-white rounded-lg shadow-sm p-6">
+                {promptLoading ? (
+                  <span className="loader"></span>
+                ) : prompt ? (
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                          {prompt.cefr_level}
+                        </span>
+                        <span className="text-gray-500 text-sm">Writing Prompt</span>
+                      </div>
+                      <p className="text-gray-800 text-lg leading-relaxed">{prompt.text}</p>
+                    </div>
+                    <button
+                      onClick={refreshPrompt}
+                      className="ml-4 p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
+                      title="Get new prompt"
+                    >
+                      <ArrowPathIcon className="h-5 w-5" />
+                    </button>
                   </div>
-                  <p className="text-gray-800 text-lg leading-relaxed">{prompt.text}</p>
+                ) : (
+                  <div className="text-center text-gray-500">
+                    <p>No prompt available</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Editor Section */}
+              <div className="bg-white rounded-lg shadow-sm">
+                {/* Toolbar */}
+                <div className="border-b border-gray-200 p-4">
+                  <div className="flex flex-wrap gap-2 items-center">
+                    <StyleButton
+                      style="BOLD"
+                      icon={<BoldIcon className="h-5 w-5" />}
+                      active={currentInlineStyle.has('BOLD')}
+                      onToggle={toggleInlineStyle}
+                    />
+                    <StyleButton
+                      style="ITALIC"
+                      icon={<ItalicIcon className="h-5 w-5" />}
+                      active={currentInlineStyle.has('ITALIC')}
+                      onToggle={toggleInlineStyle}
+                    />
+                    <div className="border-l border-gray-300 mx-2"></div>
+                    <BlockStyleButton
+                      style="unordered-list-item"
+                      icon={<ListBulletIcon className="h-5 w-5" />}
+                      active={blockType === 'unordered-list-item'}
+                      onToggle={toggleBlockType}
+                    />
+                    <BlockStyleButton
+                      style="ordered-list-item"
+                      icon={<NumberedListIcon className="h-5 w-5" />}
+                      active={blockType === 'ordered-list-item'}
+                      onToggle={toggleBlockType}
+                    />
+                    <div className="border-l border-gray-300 mx-2"></div>
+                    <button
+                      onClick={handleAnalyzeText}
+                      disabled={isAnalyzing || !currentDocument || !getCurrentText().trim()}
+                      className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                    >
+                      <MagnifyingGlassIcon className="h-4 w-4" />
+                      <span>{isAnalyzing ? 'Analyzing...' : 'Analyse'}</span>
+                    </button>
+                  </div>
                 </div>
-                <button
-                  onClick={refreshPrompt}
-                  className="ml-4 p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
-                  title="Get new prompt"
-                >
-                  <ArrowPathIcon className="h-5 w-5" />
-                </button>
-              </div>
-            </div>
-          )}
 
-          {/* Editor Section */}
-          <div className="bg-white rounded-lg shadow-sm">
-            {/* Toolbar */}
-            <div className="border-b border-gray-200 p-4">
-              <div className="flex flex-wrap gap-2">
-                <StyleButton
-                  style="BOLD"
-                  icon={<BoldIcon className="h-5 w-5" />}
-                  active={currentInlineStyle.has('BOLD')}
-                  onToggle={toggleInlineStyle}
-                />
-                <StyleButton
-                  style="ITALIC"
-                  icon={<ItalicIcon className="h-5 w-5" />}
-                  active={currentInlineStyle.has('ITALIC')}
-                  onToggle={toggleInlineStyle}
-                />
-                <div className="border-l border-gray-300 mx-2"></div>
-                <BlockStyleButton
-                  style="unordered-list-item"
-                  icon={<ListBulletIcon className="h-5 w-5" />}
-                  active={blockType === 'unordered-list-item'}
-                  onToggle={toggleBlockType}
-                />
-                <BlockStyleButton
-                  style="ordered-list-item"
-                  icon={<NumberedListIcon className="h-5 w-5" />}
-                  active={blockType === 'ordered-list-item'}
-                  onToggle={toggleBlockType}
-                />
+                {/* Editor */}
+                <div className="p-6">
+                  <div 
+                    className="min-h-96 prose max-w-none focus-within:outline-none"
+                    style={{ 
+                      color: '#1f2937',
+                      backgroundColor: '#ffffff'
+                    }}
+                  >
+                    <Editor
+                      editorState={editorState}
+                      onChange={handleEditorChange}
+                      handleKeyCommand={handleKeyCommand}
+                      placeholder="Start writing your response to the prompt..."
+                      spellCheck={true}
+                    />
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* Editor */}
-            <div className="p-6">
-              <div 
-                className="min-h-96 prose max-w-none focus-within:outline-none"
-                style={{ 
-                  color: '#1f2937', // Dark gray text for readability
-                  backgroundColor: '#ffffff' // White background
-                }}
-              >
-                <Editor
-                  editorState={editorState}
-                  onChange={handleEditorChange}
-                  handleKeyCommand={handleKeyCommand}
-                  placeholder="Start writing your response to the prompt..."
-                  spellCheck={true}
-                />
+            {/* Feedback Panel */}
+            <div className="bg-white rounded-lg shadow-sm h-fit">
+              <div className="p-4 border-b border-gray-200">
+                <h3 className="text-lg font-medium text-gray-900">Feedback</h3>
+              </div>
+              <div className="p-4">
+                {feedbackSuggestions.length === 0 ? (
+                  <div className="text-center text-gray-500 py-8">
+                    <MagnifyingGlassIcon className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                    <p>Click 'Analyse' to get writing feedback</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {feedbackSuggestions.map((suggestion) => (
+                      <div key={suggestion.id} className="border border-gray-200 rounded-lg p-4">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                            suggestion.category === 'spelling' ? 'bg-yellow-100 text-yellow-800' :
+                            suggestion.category === 'grammar' ? 'bg-red-100 text-red-800' :
+                            suggestion.category === 'fluency' ? 'bg-blue-100 text-blue-800' :
+                            'bg-green-100 text-green-800'
+                          }`}>
+                            {suggestion.category}
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-800 mb-2">{suggestion.message}</p>
+                        <p className="text-xs text-gray-600 mb-3">{suggestion.explanation}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>
-        </main>
+        </div>
       </div>
     </ProtectedRoute>
   );

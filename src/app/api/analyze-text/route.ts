@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
+import { v4 as uuidv4 } from 'uuid';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -7,11 +8,11 @@ const openai = new OpenAI({
 
 export async function POST(request: NextRequest) {
   try {
-    const { text, cefrLevel } = await request.json();
+    const { text, cefrLevel, documentId } = await request.json();
 
-    if (!text || !cefrLevel) {
+    if (!text || !cefrLevel || !documentId) {
       return NextResponse.json(
-        { error: 'Text and CEFR level are required' },
+        { error: 'Text, CEFR level, and document ID are required' },
         { status: 400 }
       );
     }
@@ -33,20 +34,23 @@ Please provide your analysis in the following JSON format:
 {
   "suggestions": [
     {
-      "category": "GRAMMAR|SPELLING|PUNCTUATION|STYLE|FLUENCY",
+      "category": "spelling|grammar|fluency|clarity",
       "message": "Brief description of the issue",
       "explanation": "Detailed explanation of why this needs improvement",
       "offset": number (character position where issue starts),
       "length": number (length of problematic text),
-      "suggestions": ["alternative 1", "alternative 2"],
-      "rule": "Grammar rule or style guideline"
+      "suggested_fix": "single best correction for this issue"
     }
   ],
   "overallFeedback": "General comments about the writing",
   "score": number (1-10 rating appropriate for ${cefrLevel} level)
 }
 
-Be constructive and encouraging while being precise about areas for improvement.
+Important: 
+- Use lowercase category names: "spelling", "grammar", "fluency", or "clarity"
+- Provide exact character offsets for each issue
+- Include a single best correction in "suggested_fix" field
+- Be constructive and encouraging while being precise about areas for improvement
 `;
 
     const completion = await openai.chat.completions.create({
@@ -74,7 +78,22 @@ Be constructive and encouraging while being precise about areas for improvement.
     // Try to parse the JSON response
     try {
       const analysis = JSON.parse(responseText);
-      return NextResponse.json(analysis);
+      
+      // Transform suggestions to match our interface
+      const transformedSuggestions = (analysis.suggestions || []).map((suggestion: any) => ({
+        id: uuidv4(),
+        category: suggestion.category?.toLowerCase() || 'clarity',
+        message: suggestion.message || '',
+        explanation: suggestion.explanation || '',
+        suggested_fix: suggestion.suggested_fix || suggestion.suggestions?.[0] || '',
+        offset: suggestion.offset || 0,
+        length: suggestion.length || 0
+      }));
+
+      return NextResponse.json({
+        ...analysis,
+        suggestions: transformedSuggestions
+      });
     } catch (parseError) {
       // If JSON parsing fails, return the raw text as feedback
       return NextResponse.json({

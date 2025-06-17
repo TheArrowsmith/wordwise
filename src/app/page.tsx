@@ -12,7 +12,6 @@ export default function Home() {
       <div className="w-full max-w-md space-y-6 rounded-lg bg-white p-8 shadow-md text-center">
         <div className="flex items-center justify-center space-x-2">
           <SparklesIcon className="h-8 w-8 text-indigo-600" />
-          <h1 className="text-3xl font-bold text-gray-900">Arrowsmith</h1>
         </div>
         <p className="text-gray-800">Your Next.js app with Supabase authentication</p>
         
