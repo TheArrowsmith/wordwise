@@ -19,7 +19,7 @@ export default function SignIn() {
     if (error) {
       setError(error.message);
     } else {
-      router.push('/dashboard');
+      router.push('/documents');
     }
     setLoading(false);
   };
