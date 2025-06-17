@@ -4,6 +4,12 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { Editor, EditorState, RichUtils, ContentState, convertToRaw, convertFromRaw } from 'draft-js';
 import { useDebounce } from 'use-debounce';
 import { ArrowPathIcon } from '@heroicons/react/24/outline';
+import { 
+  BoldIcon, 
+  ItalicIcon, 
+  ListBulletIcon, 
+  NumberedListIcon 
+} from '@heroicons/react/24/outline';
 import { supabase } from '@/lib/supabase';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import Link from 'next/link';
@@ -258,14 +264,14 @@ export default function EditorPage() {
     window.history.replaceState({}, '', '/editor');
   };
 
-  const StyleButton = ({ style, label, active, onToggle }: {
+  const StyleButton = ({ style, icon, active, onToggle }: {
     style: string;
-    label: string;
+    icon: React.ReactNode;
     active: boolean;
     onToggle: (style: string) => void;
   }) => (
     <button
-      className={`px-3 py-1 text-sm font-medium rounded ${
+      className={`p-2 rounded ${
         active
           ? 'bg-blue-600 text-white'
           : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
@@ -275,18 +281,18 @@ export default function EditorPage() {
         onToggle(style);
       }}
     >
-      {label}
+      {icon}
     </button>
   );
 
-  const BlockStyleButton = ({ style, label, active, onToggle }: {
+  const BlockStyleButton = ({ style, icon, active, onToggle }: {
     style: string;
-    label: string;
+    icon: React.ReactNode;
     active: boolean;
     onToggle: (style: string) => void;
   }) => (
     <button
-      className={`px-3 py-1 text-sm font-medium rounded ${
+      className={`p-2 rounded ${
         active
           ? 'bg-blue-600 text-white'
           : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
@@ -296,7 +302,7 @@ export default function EditorPage() {
         onToggle(style);
       }}
     >
-      {label}
+      {icon}
     </button>
   );
 
@@ -386,26 +392,26 @@ export default function EditorPage() {
               <div className="flex flex-wrap gap-2">
                 <StyleButton
                   style="BOLD"
-                  label="Bold"
+                  icon={<BoldIcon className="h-5 w-5" />}
                   active={currentInlineStyle.has('BOLD')}
                   onToggle={toggleInlineStyle}
                 />
                 <StyleButton
                   style="ITALIC"
-                  label="Italic"
+                  icon={<ItalicIcon className="h-5 w-5" />}
                   active={currentInlineStyle.has('ITALIC')}
                   onToggle={toggleInlineStyle}
                 />
                 <div className="border-l border-gray-300 mx-2"></div>
                 <BlockStyleButton
                   style="unordered-list-item"
-                  label="• List"
+                  icon={<ListBulletIcon className="h-5 w-5" />}
                   active={blockType === 'unordered-list-item'}
                   onToggle={toggleBlockType}
                 />
                 <BlockStyleButton
                   style="ordered-list-item"
-                  label="1. List"
+                  icon={<NumberedListIcon className="h-5 w-5" />}
                   active={blockType === 'ordered-list-item'}
                   onToggle={toggleBlockType}
                 />

@@ -2,6 +2,7 @@ Text Editor Implementation
 
 - [x] Install and configure Draft.js with basic formatting toolbar
 - [x] Set up Draft.js editor with bold, italic, and list formatting options
+- [x] Use heroicons instead of text labels for toolbar buttons (bold, italic, list-bullet, numbered-list)
 - [x] Implement 500ms debounce for text input using use-debounce
 - [x] Create Next.js API route for OpenAI text analysis
 - [x] If a document UUID is provided in the URL, load that document and its prompt.
