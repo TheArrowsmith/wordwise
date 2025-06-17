@@ -4,24 +4,13 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import Link from 'next/link';
-
-interface Document {
-  id: string;
-  content: string;
-  created_at: string;
-  updated_at: string;
-  prompt_id: string;
-  prompts?: {
-    cefr_level: string;
-    text: string;
-  } | null;
-}
+import { DocumentWithPromptPartial } from '@/types';
 
 type SortField = 'title' | 'cefr_level' | 'created_at';
 type SortDirection = 'asc' | 'desc';
 
 export default function DocumentsPage() {
-  const [documents, setDocuments] = useState<Document[]>([]);
+  const [documents, setDocuments] = useState<DocumentWithPromptPartial[]>([]);
   const [loading, setLoading] = useState(true);
   const [sortField, setSortField] = useState<SortField>('created_at');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
@@ -86,7 +75,7 @@ export default function DocumentsPage() {
     }
   };
 
-  const handleDocumentClick = (document: Document) => {
+  const handleDocumentClick = (document: DocumentWithPromptPartial) => {
     // Navigate to editor with document ID as URL parameter
     window.location.href = `/editor?id=${document.id}`;
   };

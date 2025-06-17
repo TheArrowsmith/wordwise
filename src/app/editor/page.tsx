@@ -14,33 +14,15 @@ import { supabase } from '@/lib/supabase';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import { Document, Prompt, Profile } from '@/types';
 import 'draft-js/dist/Draft.css';
-
-interface Prompt {
-  id: string;
-  text: string;
-  cefr_level: string;
-}
-
-interface Document {
-  id: string;
-  content: string;
-  prompt_id: string;
-  user_id: string;
-  created_at: string;
-  updated_at: string;
-}
-
-interface Profile {
-  cefr_level: string;
-}
 
 export default function EditorPage() {
   const [editorState, setEditorState] = useState(() => EditorState.createEmpty());
   const [prompt, setPrompt] = useState<Prompt | null>(null);
   const [currentDocument, setCurrentDocument] = useState<Document | null>(null);
   const [user, setUser] = useState<any>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
+  const [profile, setProfile] = useState<Pick<Profile, 'cefr_level'> | null>(null);
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'idle'>('idle');
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
