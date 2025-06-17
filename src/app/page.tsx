@@ -1,16 +1,15 @@
 import Link from "next/link";
+import Image from "next/image";
 import { 
   UserPlusIcon, 
-  ArrowRightOnRectangleIcon, 
-  ChartBarIcon,
-  SparklesIcon 
+  ArrowRightOnRectangleIcon
 } from "@heroicons/react/24/outline";
 
 export default function Home() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-100">
       <div className="flex flex-col items-center gap-6">
-        <img src="/images/shakespear.jpg" alt="Shakes Pear" className="h-40 w-40 rounded" />
+        <Image src="/images/shakespear.jpg" alt="Shakes Pear" width={160} height={160} className="rounded" />
 
         <div className="w-full w-md space-y-6 rounded-lg bg-white p-8 shadow-md text-center">
           <p className="text-2xl text-gray-800">Shakes Pear</p>

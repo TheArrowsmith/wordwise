@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { Editor, EditorState, RichUtils, ContentState, convertToRaw, convertFromRaw, CompositeDecorator, Modifier } from 'draft-js';
+import { Editor, EditorState, RichUtils, ContentState, convertToRaw, convertFromRaw, CompositeDecorator } from 'draft-js';
 import { useDebounce } from 'use-debounce';
 import { ArrowPathIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { 
@@ -14,9 +14,10 @@ import { supabase } from '@/lib/supabase';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { Document, Prompt, Profile } from '@/types';
+import { Document, Prompt, Profile, User, DraftJSContentBlock, DraftJSCallback } from '@/types';
 import 'draft-js/dist/Draft.css';
 import 'placeholder-loading/dist/css/placeholder-loading.min.css';
+import React from 'react';
 
 interface FeedbackSuggestion {
   id: string;
@@ -28,12 +29,17 @@ interface FeedbackSuggestion {
   length: number;
 }
 
+interface FeedbackSpanProps {
+  children: React.ReactNode;
+  start: number;
+}
+
 export default function EditorPage() {
   const [editorState, setEditorState] = useState(() => EditorState.createEmpty());
   const [prompt, setPrompt] = useState<Prompt | null>(null);
   const [promptLoading, setPromptLoading] = useState(true);
   const [currentDocument, setCurrentDocument] = useState<Document | null>(null);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Pick<Profile, 'cefr_level'> | null>(null);
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'idle'>('idle');
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -55,8 +61,8 @@ export default function EditorPage() {
   const [debouncedText] = useDebounce(getCurrentText(), 500);
 
   // Create decorator for feedback highlighting
-  const createDecorator = () => {
-    const feedbackStrategy = (contentBlock: any, callback: any) => {
+  const createDecorator = useCallback(() => {
+    const feedbackStrategy = (contentBlock: DraftJSContentBlock, callback: DraftJSCallback) => {
       const text = contentBlock.getText();
       feedbackSuggestions.forEach(suggestion => {
         const start = suggestion.offset;
@@ -67,8 +73,7 @@ export default function EditorPage() {
       });
     };
 
-    const FeedbackSpan = (props: any) => {
-      const text = props.children[0].props.text;
+    const FeedbackSpan = (props: FeedbackSpanProps) => {
       const offset = props.start;
       const suggestion = feedbackSuggestions.find(s => s.offset === offset);
       
@@ -97,56 +102,19 @@ export default function EditorPage() {
         component: FeedbackSpan,
       },
     ]);
-  };
+  }, [feedbackSuggestions]);
 
   // Update editor decorator when feedback changes
   useEffect(() => {
     const decorator = feedbackSuggestions.length > 0 ? createDecorator() : null;
     const newEditorState = EditorState.set(editorState, { decorator });
     setEditorState(newEditorState);
-  }, [feedbackSuggestions]);
+  }, [feedbackSuggestions, createDecorator, editorState]);
 
-  // Get user and profile
-  useEffect(() => {
-    const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        setUser(user);
-        
-        // Get user profile for CEFR level
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('cefr_level')
-          .eq('id', user.id)
-          .single();
-        
-        if (profileData) {
-          setProfile(profileData);
-        }
-      }
-    };
-    getUser();
-  }, []);
-
-  // Load existing document or get random prompt
-  useEffect(() => {
-    if (user && profile) {
-      if (documentId) {
-        loadDocument(documentId);
-      } else {
-        loadRandomPrompt();
-      }
-    }
-  }, [user, profile, documentId]);
-
-  // Handle autosaving
-  useEffect(() => {
-    if (!isInitialLoad && hasUnsavedChanges && debouncedText && user) {
-      handleAutoSave();
-    }
-  }, [debouncedText, hasUnsavedChanges, user, isInitialLoad]);
-
-  const loadDocument = async (docId: string) => {
+  // Define functions with useCallback first to avoid declaration order issues
+  const loadDocument = useCallback(async (docId: string) => {
+    if (!user) return;
+    
     setPromptLoading(true);
     try {
       const { data, error } = await supabase
@@ -179,14 +147,14 @@ export default function EditorPage() {
       }
     } catch (error) {
       console.error('Error loading document:', error);
-      loadRandomPrompt(); // Fallback to random prompt
+      // Don't call loadRandomPrompt here to avoid circular dependency
     } finally {
       setPromptLoading(false);
       setIsInitialLoad(false);
     }
-  };
+  }, [user]);
 
-  const loadRandomPrompt = async () => {
+  const loadRandomPrompt = useCallback(async () => {
     if (!profile) return;
     setPromptLoading(true);
 
@@ -208,9 +176,9 @@ export default function EditorPage() {
       setPromptLoading(false);
       setIsInitialLoad(false);
     }
-  };
+  }, [profile]);
 
-  const handleAutoSave = async () => {
+  const handleAutoSave = useCallback(async () => {
     if (!user || !prompt) return;
 
     const now = Date.now();
@@ -274,7 +242,47 @@ export default function EditorPage() {
       console.error('Error saving document:', error);
       setSaveStatus('idle');
     }
-  };
+  }, [user, prompt, editorState, currentDocument]);
+
+  // Get user and profile
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setUser(user);
+        
+        // Get user profile for CEFR level
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('cefr_level')
+          .eq('id', user.id)
+          .single();
+        
+        if (profileData) {
+          setProfile(profileData);
+        }
+      }
+    };
+    getUser();
+  }, []);
+
+  // Load existing document or get random prompt
+  useEffect(() => {
+    if (user && profile) {
+      if (documentId) {
+        loadDocument(documentId);
+      } else {
+        loadRandomPrompt();
+      }
+    }
+  }, [user, profile, documentId, loadDocument, loadRandomPrompt]);
+
+  // Handle autosaving
+  useEffect(() => {
+    if (!isInitialLoad && hasUnsavedChanges && debouncedText && user) {
+      handleAutoSave();
+    }
+  }, [debouncedText, hasUnsavedChanges, user, isInitialLoad, handleAutoSave]);
 
   const handleAnalyzeText = async () => {
     if (!user || !profile || !currentDocument) return;
@@ -548,7 +556,7 @@ export default function EditorPage() {
                 {feedbackSuggestions.length === 0 ? (
                   <div className="text-center text-gray-500 py-8">
                     <MagnifyingGlassIcon className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                    <p>Click 'Analyse' to get writing feedback</p>
+                    <p>Click &apos;Analyse&apos; to get writing feedback</p>
                   </div>
                 ) : (
                   <div className="space-y-4">

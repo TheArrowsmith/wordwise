@@ -39,8 +39,8 @@ export default function Profile() {
         } else {
           setSelectedLevel(profile.cefr_level || 'A1');
         }
-      } catch (error: any) {
-        setError(error.message);
+      } catch (error) {
+        setError(error instanceof Error ? error.message : 'An error occurred');
       }
       setInitialLoading(false);
     };
@@ -74,8 +74,8 @@ export default function Profile() {
       if (error) throw error;
 
       setSuccess('Profile updated successfully!');
-    } catch (error: any) {
-      setError(error.message);
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'An error occurred');
     }
     setLoading(false);
   };

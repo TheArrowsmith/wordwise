@@ -1,4 +1,4 @@
-import Icon from './Icon';
+import Icon, { IconName } from './Icon';
 import { HeartIcon, StarIcon } from '@heroicons/react/24/outline';
 import { HeartIcon as HeartSolid, StarIcon as StarSolid } from '@heroicons/react/24/solid';
 
@@ -103,14 +103,14 @@ export default function IconDemo() {
       <section className="space-y-4">
         <h2 className="text-xl font-semibold text-gray-800">Available Icons</h2>
         <div className="grid grid-cols-3 md:grid-cols-6 lg:grid-cols-8 gap-4 p-4 bg-gray-50 rounded-lg">
-          {[
+          {([
             'user-plus', 'arrow-right-on-rectangle', 'chart-bar', 'sparkles',
             'home', 'cog-6-tooth', 'user', 'bell', 'magnifying-glass',
             'plus', 'trash', 'pencil', 'eye', 'eye-slash', 'check', 'x-mark',
             'arrow-left', 'arrow-right'
-          ].map((iconName) => (
+          ] as IconName[]).map((iconName) => (
             <div key={iconName} className="flex flex-col items-center space-y-1 p-2">
-              <Icon name={iconName as any} className="text-gray-600" />
+              <Icon name={iconName} className="text-gray-600" />
               <span className="text-xs text-gray-500 text-center">{iconName}</span>
             </div>
           ))}

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { v4 as uuidv4 } from 'uuid';
+import { AnalyzedSuggestion } from '@/types';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -80,7 +81,7 @@ Important:
       const analysis = JSON.parse(responseText);
       
       // Transform suggestions to match our interface
-      const transformedSuggestions = (analysis.suggestions || []).map((suggestion: any) => ({
+      const transformedSuggestions = (analysis.suggestions || []).map((suggestion: AnalyzedSuggestion) => ({
         id: uuidv4(),
         category: suggestion.category?.toLowerCase() || 'clarity',
         message: suggestion.message || '',
@@ -94,7 +95,7 @@ Important:
         ...analysis,
         suggestions: transformedSuggestions
       });
-    } catch (parseError) {
+    } catch {
       // If JSON parsing fails, return the raw text as feedback
       return NextResponse.json({
         suggestions: [],

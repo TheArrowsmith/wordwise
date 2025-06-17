@@ -1,20 +1,33 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import Link from 'next/link';
-import { DocumentWithPromptPartial } from '@/types';
+import { DocumentWithPromptPartial, User, EditorBlock, CEFRLevel } from '@/types';
 
 type SortField = 'title' | 'cefr_level' | 'created_at';
 type SortDirection = 'asc' | 'desc';
+
+// Type for the Supabase query response
+type DocumentQueryResult = {
+  id: string;
+  content: string;
+  created_at: string;
+  updated_at: string;
+  prompt_id: string;
+  prompts: {
+    cefr_level: CEFRLevel;
+    text: string;
+  }[] | null;
+};
 
 export default function DocumentsPage() {
   const [documents, setDocuments] = useState<DocumentWithPromptPartial[]>([]);
   const [loading, setLoading] = useState(true);
   const [sortField, setSortField] = useState<SortField>('created_at');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
     const getUser = async () => {
@@ -24,13 +37,7 @@ export default function DocumentsPage() {
     getUser();
   }, []);
 
-  useEffect(() => {
-    if (user) {
-      fetchDocuments();
-    }
-  }, [user, sortField, sortDirection]);
-
-  const fetchDocuments = async () => {
+  const fetchDocuments = useCallback(async () => {
     if (!user) return;
     
     setLoading(true);
@@ -56,15 +63,26 @@ export default function DocumentsPage() {
       console.error('Error fetching documents:', error);
     } else {
       // Transform data to match expected interface
-      const transformedData = (data || []).map((doc: any) => ({
-        ...doc,
-        prompts: Array.isArray(doc.prompts) ? doc.prompts[0] : doc.prompts
+      const transformedData = (data || []).map((doc: DocumentQueryResult): DocumentWithPromptPartial => ({
+        id: doc.id,
+        user_id: user.id,
+        content: doc.content,
+        created_at: doc.created_at,
+        updated_at: doc.updated_at,
+        prompt_id: doc.prompt_id,
+        prompts: Array.isArray(doc.prompts) && doc.prompts.length > 0 ? doc.prompts[0] : null
       }));
       setDocuments(transformedData);
     }
     
     setLoading(false);
-  };
+  }, [user, sortField, sortDirection]);
+
+  useEffect(() => {
+    if (user) {
+      fetchDocuments();
+    }
+  }, [user, fetchDocuments]);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -84,7 +102,7 @@ export default function DocumentsPage() {
     try {
       const parsed = JSON.parse(content);
       const blocks = parsed.blocks || [];
-      const text = blocks.map((block: any) => block.text || '').join(' ').trim();
+      const text = blocks.map((block: EditorBlock) => block.text || '').join(' ').trim();
       return text;
     } catch {
       // Fallback to treating as plain text if JSON parsing fails

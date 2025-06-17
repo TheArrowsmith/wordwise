@@ -65,7 +65,7 @@ export default function SignIn() {
         </form>
         {error && <p className="text-red-500 text-center">{error}</p>}
         <p className="text-center text-sm text-gray-700">
-          Don't have an account?{' '}
+          Don&apos;t have an account?{' '}
           <a href="/auth/signup" className="text-indigo-600 hover:underline">
             Sign Up
           </a>
