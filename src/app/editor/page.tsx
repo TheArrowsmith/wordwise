@@ -107,9 +107,8 @@ export default function EditorPage() {
   // Update editor decorator when feedback changes
   useEffect(() => {
     const decorator = feedbackSuggestions.length > 0 ? createDecorator() : null;
-    const newEditorState = EditorState.set(editorState, { decorator });
-    setEditorState(newEditorState);
-  }, [feedbackSuggestions, createDecorator, editorState]);
+    setEditorState(prevState => EditorState.set(prevState, { decorator }));
+  }, [feedbackSuggestions, createDecorator]);
 
   // Define functions with useCallback first to avoid declaration order issues
   const loadDocument = useCallback(async (docId: string) => {
