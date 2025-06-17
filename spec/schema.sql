@@ -24,18 +24,17 @@ CREATE TABLE documents (
 CREATE INDEX idx_documents_user_id ON documents(user_id);
 CREATE INDEX idx_documents_prompt_id ON documents(prompt_id);
 
-CREATE TABLE suggestions (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  document_id UUID REFERENCES documents(id)  ON DELETE CASCADE,
-  category TEXT CHECK (category IN ('SPELLING', 'GRAMMAR', 'PUNCTUATION', 'STYLE', 'FLUENCY')),
-  message TEXT,
-  explanation TEXT,
-  "offset" INTEGER,
-  length INTEGER,
-  suggestions TEXT[], -- Array of suggested corrections
-  rule TEXT,
-  created_at TIMESTAMP DEFAULT NOW()
+CREATE TABLE feedback (
+  id uuid primary key default gen_random_uuid(),
+  document_id uuid references documents(id) on delete cascade,
+  category text check (category in ('spelling', 'grammar', 'fluency', 'clarity')),
+  message text not null,
+  explanation text,
+  offset integer not null,
+  length integer not null,
+  fix text,
+  rule text,
+  created_at timestamptz default now()
 );
 
-CREATE INDEX idx_suggestions_document_id ON suggestions(document_id);
-
+CREATE INDEX on feedback (document_id);
