@@ -1,0 +1,1 @@
+Ensure that all text is readable: use dark text on light backgrounds or light text on dark backgrounds. This includes in form inputs e.g. <select>s or <textarea>s.
