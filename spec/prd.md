@@ -276,16 +276,6 @@ CREATE INDEX idx_suggestions_doc_hash ON suggestions (document_id, text_hash);
 - [ ] Navigation bar with “Editor” (to `/editor`) and “Profile” (to `/profile`) links (Tailwind: `bg-gray-800 text-white`).
 - [ ] Responsive: Table scrolls horizontally on mobile (Tailwind: `overflow-x-auto`).
 
-### 9.5 Profile Screen
-- [ ] Display email (read-only, Tailwind: `text-gray-700`).
-- [ ] Display CEFR level dropdown (A1–C2, Tailwind: `border-gray-300`).
-- [ ] Display “Save” button (Tailwind: `bg-blue-600 text-white`, disabled if unchanged).
-- [ ] Update `users` table on save.
-- [ ] Show success message (Tailwind: `text-green-500`) or error (Tailwind: `text-red-500`).
-- [ ] Display “Logout” button (Tailwind: `bg-red-500 text-white`) to clear session and redirect to `/login`.
-- [ ] Navigation bar with “Editor” (to `/editor`) and “My Documents” (to `/documents`) links (Tailwind: `bg-gray-800 text-white`).
-- [ ] Center content (Tailwind: `flex justify-center items-center h-screen`).
-- [ ] Responsive: Stacked inputs on mobile.
 
 ## 10. Future Considerations
 - Mix stored prompts with OpenAI-generated ones.
