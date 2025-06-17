@@ -80,8 +80,21 @@ export default function DocumentsPage() {
     window.location.href = `/editor?id=${document.id}`;
   };
 
+  const extractTextFromEditorContent = (content: string) => {
+    try {
+      const parsed = JSON.parse(content);
+      const blocks = parsed.blocks || [];
+      const text = blocks.map((block: any) => block.text || '').join(' ').trim();
+      return text;
+    } catch {
+      // Fallback to treating as plain text if JSON parsing fails
+      return content;
+    }
+  };
+
   const getTitle = (content: string) => {
-    return content.slice(0, 50) + (content.length > 50 ? '...' : '');
+    const text = extractTextFromEditorContent(content);
+    return text.slice(0, 50) + (text.length > 50 ? '...' : '');
   };
 
   const formatDate = (dateString: string) => {
@@ -93,8 +106,8 @@ export default function DocumentsPage() {
     
     switch (sortField) {
       case 'title':
-        aValue = a.content.toLowerCase();
-        bValue = b.content.toLowerCase();
+        aValue = extractTextFromEditorContent(a.content).toLowerCase();
+        bValue = extractTextFromEditorContent(b.content).toLowerCase();
         break;
       case 'cefr_level':
         aValue = a.prompts?.cefr_level || '';

@@ -6,6 +6,7 @@ Document Management System
   -  CEFR Level (taken from the document's prompt)
   -  Creation Date
 - [x] Implement sortable columns functionality
+- [x] Handle JSON content format from text editor - extract actual text for display and sorting
 - [x] Add click handler to load document in editor
 - [x] Navigate to editor with document ID as URL parameter (/editor?id=uuid)
 - [x] Load associated prompt when opening existing document
