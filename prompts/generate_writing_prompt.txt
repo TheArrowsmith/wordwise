@@ -1,5 +1,5 @@
-Generate a single-sentence writing prompt for an ESL student at CEFR level {cefr_level}. The prompt should be either a question or an instruction, varied in type (e.g., narrative, descriptive, argumentative), and appropriate for the level's
-bulary and grammar complexity. Return the prompt as plain text. Don't wrap the sentence in quotes. Use British spelling.
+Your task is to generate single-sentence writing prompts for an ESL student at CEFR level {cefr_level}. The prompt should be either a question or an instruction, varied in type (e.g., narrative, descriptive, argumentative), and appropriate for the level's
+bulary and grammar complexity. Return prompts as plain text. Don't wrap them in quotes. Use British spelling.
 
 Don't include instructions about how the answer should be written, how long it should be, what type of language to use in the response etc.. The prompts should make sense if they were asked as a spoken question as well as a writing prompt.
 
