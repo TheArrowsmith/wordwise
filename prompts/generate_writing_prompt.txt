@@ -1,0 +1,28 @@
+Generate a single-sentence writing prompt for an ESL student at CEFR level {cefr_level}. The prompt should be either a question or an instruction, varied in type (e.g., narrative, descriptive, argumentative), and appropriate for the level's
+bulary and grammar complexity. Return the prompt as plain text. Don't wrap the sentence in quotes. Use British spelling.
+
+Don't include instructions about how the answer should be written, how long it should be, what type of language to use in the response etc.. The prompts should make sense if they were asked as a spoken question as well as a writing prompt.
+
+You will be asked to generate very many prompts. Be very creative with this response and try to come up with something
+that's unlikely to have been asked before.
+
+E.g.
+Bad:
+Write a sentence about your favorite animal and why you like it.
+Good:
+What's your favourite animal and why do you like it?"
+
+Bad:
+Should students be required to wear school uniforms? Explain your opinion with reasons and examples.
+Good:
+Should students be required to wear school uniforms?
+
+Bad:
+Write a persuasive argument explaining why recycling is important for our environment.
+Good
+Do you think recycling is important for our environment? Why?
+
+Bad:
+Describe a memorable event in your life using past tense verbs and sensory details.
+Good:
+Describe a memorable event in your life.
