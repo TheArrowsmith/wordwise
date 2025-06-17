@@ -54,7 +54,7 @@ export default function DocumentsPage() {
         created_at,
         updated_at,
         prompt_id,
-        prompts:prompt_id (
+        prompts!prompt_id (
           cefr_level,
           text
         )
@@ -66,7 +66,12 @@ export default function DocumentsPage() {
     if (error) {
       console.error('Error fetching documents:', error);
     } else {
-      setDocuments(data || []);
+      // Transform data to match expected interface
+      const transformedData = (data || []).map((doc: any) => ({
+        ...doc,
+        prompts: Array.isArray(doc.prompts) ? doc.prompts[0] : doc.prompts
+      }));
+      setDocuments(transformedData);
     }
     
     setLoading(false);
@@ -82,9 +87,8 @@ export default function DocumentsPage() {
   };
 
   const handleDocumentClick = (document: Document) => {
-    // Store document in localStorage to load in editor
-    localStorage.setItem('selectedDocument', JSON.stringify(document));
-    window.location.href = '/editor';
+    // Navigate to editor with document ID as URL parameter
+    window.location.href = `/editor?id=${document.id}`;
   };
 
   const getTitle = (content: string) => {

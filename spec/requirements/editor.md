@@ -1,25 +1,18 @@
 Text Editor Implementation
 
-- [ ] Install and configure Draft.js with basic formatting toolbar
-- [ ] Set up Draft.js editor with bold, italic, and list formatting options
-- [ ] Implement 500ms debounce for text input using use-debounce
-- [ ] Create Next.js API route for OpenAI text analysis
-- [ ] Implement suggestion highlighting with underlines
-   - [ ] Suggestions are underlined according to their category: red for spelling, orange for grammar, yellow for punctuation, blue for style and purple for fluency.
-- [ ] Handle OpenAI API response parsing for suggestions
-- [ ] Writing feedback requests ONLY trigger when text actually changes, not repeatedly
-- [ ] Feedback remains consistent - once received for specific text, it doesn't change until text is modified
-- [ ] Prevent feedback from rewriting itself with slightly different wording for the same errors
-- [ ] Randomly choose a prompt for the user's CEFR level from the `prompts` table.
-- [ ] Display a 'refresh' icon (heroicon `arrows-path`) next to the prompt. Clicking it randomly selects a new prompt from the `prompts` table.
-- [ ] Autosaving:
-  - [ ] When I make my first edit to the blank editor, a new document is saved to the backend.
-  - [ ] The document is automatically saved again on subsequent edits.
-  - [ ] To prevent overloading the backend, auto-saving is throttled so we save at most once per second.
-  - [ ] When an autosave is triggered, the text 'Saving...' appears. When autosave completes, this changes to 'Saved'.
-  - [ ] Autosave ONLY triggers when actual content changes occur, not in loops
-  - [ ] Autosave stops after saving and doesn't continue indefinitely
-- [ ] Implement auto-save to Supabase documents table on each debounced change
-- [ ] Store document metadata: content, prompt_id, created_at, updated_at
-- [ ] Handle API failures gracefully (show "Feedback unavailable" message)
-- [ ] Typed text in textarea is readable (sufficient contrast between text and background)
+- [x] Install and configure Draft.js with basic formatting toolbar
+- [x] Set up Draft.js editor with bold, italic, and list formatting options
+- [x] Implement 500ms debounce for text input using use-debounce
+- [x] Create Next.js API route for OpenAI text analysis
+- [x] If a document UUID is provided in the URL, load that document and its prompt.
+- [x] If no existing document UUID is provided, randomly choose a prompt for the user's CEFR level from the `prompts` table.
+- [x] Display a 'refresh' icon (heroicon `arrows-path`) next to the prompt. Clicking it randomly selects a new prompt from the `prompts` table.
+- [x] Autosaving:
+  - [x] When I make my first edit to a new, blank document, a new document is saved to the backend.
+  - [x] The document is automatically saved again on subsequent edits.
+  - [x] To prevent overloading the backend, auto-saving is throttled so we save at most once per second.
+  - [x] When an autosave is triggered, the text 'Saving...' appears. When autosave completes, this changes to 'Saved'.
+  - [x] Autosave ONLY triggers when actual content changes occur, not in loops
+  - [x] Autosave stops after saving and doesn't continue indefinitely
+  - [x] Store document metadata: content, prompt_id, created_at, updated_at
+- [x] Typed text in textarea is readable (sufficient contrast between text and background)

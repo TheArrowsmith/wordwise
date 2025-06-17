@@ -7,6 +7,7 @@ Document Management System
   -  Creation Date
 - [x] Implement sortable columns functionality
 - [x] Add click handler to load document in editor
+- [x] Navigate to editor with document ID as URL parameter (/editor?id=uuid)
 - [x] Load associated prompt when opening existing document
 - [x] Ensure documents are filtered by current user (user_id)
 - [x] Handle empty states (no documents)
