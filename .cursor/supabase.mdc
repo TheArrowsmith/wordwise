@@ -1,0 +1,72 @@
+---
+description: Rules and advice for communicating with the Supabase backend
+globs: 
+alwaysApply: false
+---
+
+# Supabase Authentication Rules
+
+## Server-side vs Client-side Authentication
+
+**CRITICAL**: The basic Supabase client created in `/src/lib/supabase.ts` is designed for client-side use and does NOT work for authentication in Next.js API routes.
+
+### The Problem
+When using the standard Supabase client in API routes:
+```typescript
+// ❌ WRONG - This will always return 401 Unauthorized in API routes
+import { supabase } from '@/lib/supabase';
+const { data: { user }, error } = await supabase.auth.getUser();
+```
+
+The server doesn't have access to the user's session cookies/tokens, so `getUser()` always fails.
+
+### The Solution
+
+#### For API Routes (Server-side)
+Create a Supabase client that reads the Authorization header from the request:
+
+```typescript
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+
+const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  global: {
+    headers: {
+      Authorization: request.headers.get('Authorization') || '',
+    },
+  },
+});
+```
+
+#### For Frontend (Client-side)
+Include the session token in fetch requests to API routes:
+
+```typescript
+import { supabase } from '@/lib/supabase';
+
+const { data: { session } } = await supabase.auth.getSession();
+const authHeaders: Record<string, string> = {
+  'Content-Type': 'application/json'
+};
+
+if (session?.access_token) {
+  authHeaders['Authorization'] = `Bearer ${session.access_token}`;
+}
+
+const response = await fetch('/api/your-endpoint', {
+  method: 'POST',
+  headers: authHeaders,
+  body: JSON.stringify(data)
+});
+```
+
+### Implementation Pattern
+
+1. **All API routes**: Use the server-side client pattern shown above
+2. **All frontend fetch calls to API routes**: Include auth headers as shown above
+3. **Client-side components**: Continue using the standard `supabase` import from `/src/lib/supabase.ts`
+
+This ensures proper authentication flow between frontend and backend.
+
