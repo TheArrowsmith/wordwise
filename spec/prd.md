@@ -1,169 +1,172 @@
-Product Requirements Document (PRD) for WordWise
-1. Overview
-1.1 Purpose
-WordWise is a web application designed to assist English as a Second Language (ESL) students in improving their English writing skills. It provides a text editor where users can respond to single-sentence writing prompts tailored to their CEFR level (A1–C2), with real-time grammar, spelling, punctuation, and style feedback powered by OpenAI. The app highlights mistakes, offers fluency suggestions, allows word pronunciation via AWS Polly, auto-saves documents, and provides a page to review saved documents.
-1.2 Problem Statement
-ESL students struggle with English writing due to limited feedback on grammar, vocabulary, and style. Existing tools lack CEFR-specific prompts, pronunciation support, and seamless document management. WordWise addresses this by offering a tailored, interactive writing environment with immediate corrections, fluency suggestions, audio pronunciation, and auto-saving, all in a free, user-friendly app.
-1.3 Objectives
-Enable ESL students to practice writing with CEFR-level-appropriate, single-sentence prompts.
-Provide real-time feedback on spelling, grammar, punctuation, and style using OpenAI.
-Offer fluency suggestions to improve natural English expression.
-Allow users to hear word pronunciations with AWS Polly’s “Arthur” voice.
-Auto-save documents as users type and organize them with metadata for easy access.
-Deliver a simple, intuitive UI for A1–C2 learners using React/Next.js.
-2. Use Cases
-Select CEFR Level:
-User selects their CEFR level (A1–C2) during onboarding or profile update.
-View and Refresh Writing Prompt:
-User sees a random, single-sentence CEFR-tailored prompt and can click “Refresh” (with arrow-path Heroicon) for a new one.
-Write in Text Editor:
-User types a response, with real-time error highlighting, fluency suggestions, and auto-saving to Supabase.
-Hear Word Pronunciation:
-User clicks a word to hear it pronounced via AWS Polly’s “Arthur” voice.
-View Corrections/Suggestions:
-User sees categorized errors and suggestions in a sidebar, with explanations.
-Review Documents:
-User views a list of saved documents with metadata and can edit them.
-Authenticate:
-User signs up/logs in with email/password to access their profile and documents.
-4. Functional Requirements
-4.1 Authentication
-F1.1: Users can sign up with email/password via Supabase Auth.
-F1.2: Users can log in with email/password.
-F1.3: Users can log out.
-F1.4: Password reset via email link.
-Acceptance Criteria:
-Sign-up creates a user profile with email and CEFR level.
-Login redirects to the editor page.
-Logout clears session and redirects to login page.
-Password reset sends an email with a secure link.
-4.2 User Profile
-F2.1: Users can select their CEFR level (A1–C2) during sign-up or via profile settings.
-F2.2: CEFR level is stored in Supabase and used for prompt generation.
-Acceptance Criteria:
-CEFR level dropdown displays A1, A2, B1, B2, C1, C2.
-Selected level persists across sessions.
-Default level is B1 if none selected.
-4.3 Writing Prompts
-F3.1: A random, single-sentence CEFR-tailored prompt (question or instruction) is displayed above the text editor on page load.
-F3.2: Users can click a “Refresh” button (with arrow-path Heroicon) to generate a new prompt.
-F3.3: Prompts are generated via OpenAI API, tailored to the user’s CEFR level, and varied (e.g., narrative, descriptive, argumentative).
-F3.4: Each generated prompt is stored in a Supabase table with CEFR level and creation date.
-F3.5: Initial implementation uses only OpenAI-generated prompts.
-OpenAI Prompt for Prompt Generation:
-Generate a single-sentence writing prompt for an ESL student at CEFR level {cefr_level}. The prompt should be either a question or an instruction, varied in type (e.g., narrative, descriptive, argumentative), and appropriate for the level's vocabulary and grammar complexity. Return the prompt as plain text.
+# Product Requirements Document (PRD) for WordWise
 
+## 1. Overview
 
-Example: For B1: “Describe your favorite place to relax.”
-Acceptance Criteria:
-Prompt is a single sentence, appropriate for the CEFR level (e.g., A1 uses simple present, C2 uses complex structures).
-“Refresh” generates a new prompt instantly, displayed with arrow-path Heroicon.
-Prompts are stored in prompts table with id, text, cefr_level, created_at.
-4.4 Text Editor
-F4.1: A Draft.js-based text editor allows users to type responses to prompts.
-F4.2: Errors (spelling, grammar, punctuation, style) are highlighted in red as the user types, with a 500ms debounce.
-F4.3: OpenAI API checks text for errors and fluency suggestions, returning a JSON response with categorized corrections.
-F4.4: Clicking a word triggers AWS Polly to play its pronunciation using the “Arthur” voice (British English), with no usage limits.
-F4.5: Document auto-saves to Supabase on each debounced text change (500ms).
-OpenAI Prompt for Text Checking:
-You are an ESL writing assistant for a CEFR level {cefr_level} student. Analyze the following text for spelling, grammar, punctuation, and style errors, and provide fluency suggestions to make the text more natural. Return results in JSON format with categorized errors and fluency suggestions, including offsets, lengths, and plain-English explanations for each error. Do not check for tone.
+### 1.1 Purpose
 
+WordWise is a web application designed to assist English as a Second Language (ESL) students in improving their English writing skills. It provides a Draft.js-based text editor where users can respond to single-sentence writing prompts tailored to their CEFR level (A1–C2). The app offers real-time feedback on spelling, grammar, punctuation, and style, plus fluency suggestions, using OpenAI’s API. Users can hear word pronunciations via AWS Polly’s “Arthur” voice, view corrections in a sidebar, and auto-save documents to Supabase. A “My Documents” page allows users to review and edit saved work. The app is free, uses email/password authentication, and is built with React/Next.js, Tailwind CSS, and Heroicons.
 
-Text: {text}
+### 1.2 Problem Statement
 
+ESL students struggle with English writing due to limited access to CEFR-tailored prompts, real-time feedback, and pronunciation support. Existing tools like Grammarly focus on native speakers and lack features like single-sentence prompts or document management for ESL learners. WordWise addresses this by providing a simple, interactive writing environment with immediate, specific corrections, fluency suggestions, audio pronunciation, and seamless document auto-saving.
 
-Response format:
-{
-  "errors": [
-    {
-      "category": "GRAMMAR",
-      "message": "Subject-verb agreement error",
-      "explanation": "Use a singular verb with a singular subject.",
-      "offset": 10,
-      "length": 3,
-      "suggestions": ["is"],
-      "rule_id": "SUBJECT_VERB_AGREEMENT"
-    }
-  ],
-  "fluency_suggestions": [
-    {
-      "original": "He run fast",
-      "suggested": "He runs quickly",
-      "explanation": "Use 'runs' for present tense and 'quickly' for natural adverb.",
-      "offset": 10,
-      "length": 10
-    }
-  ]
-}
+### 1.3 Objectives
 
+- Provide single-sentence, CEFR-level-appropriate writing prompts generated by OpenAI.
+- Deliver real-time feedback on spelling, grammar, punctuation, and style, with fluency suggestions.
+- Allow users to apply suggestions directly and hear word pronunciations.
+- Auto-save documents with metadata (CEFR level, prompt type, date) for easy access.
+- Offer a clean, intuitive UI for A1–C2 learners using React/Next.js, Tailwind CSS, and Heroicons.
+- Ensure secure API calls and data storage with Supabase and Next.js API routes.
 
-Example: For “He run fast” (B1):
-{
-  "errors": [
-    {
-      "category": "GRAMMAR",
-      "message": "Subject-verb agreement error",
-      "explanation": "Use a singular verb with a singular subject.",
-      "offset": 3,
-      "length": 3,
-      "suggestions": ["runs"],
-      "rule_id": "SUBJECT_VERB_AGREEMENT"
-    }
-  ],
-  "fluency_suggestions": [
-    {
-      "original": "run fast",
-      "suggested": "runs quickly",
-      "explanation": "Use 'runs' for present tense and 'quickly' for natural adverb.",
-      "offset": 3,
-      "length": 8
-    }
-  ]
-}
+## 2. User Personas
 
+- **Beginner ESL Student (Maria, 25, A1/A2 CEFR)**:
+  - Background: Spanish-speaking student learning English for work.
+  - Needs: Simple prompts, clear feedback, pronunciation support.
+  - Pain Points: Overwhelmed by complex feedback, struggles with pronunciation.
+- **Intermediate ESL Student (Ahmed, 30, B1/B2 CEFR)**:
+  - Background: Arabic-speaking professional improving English for emails.
+  - Needs: Varied prompts, detailed explanations, natural phrasing.
+  - Pain Points: Needs help with fluency, wants auto-saving.
+- **Advanced ESL Student (Li, 20, C1/C2 CEFR)**:
+  - Background: Chinese-speaking university student preparing for exams.
+  - Needs: Challenging prompts, style improvements, document organization.
+  - Pain Points: Wants precise feedback and easy document access.
 
+## 3. Use Cases
 
+1. **Authenticate**: User signs up/logs in with email/password to access the app.
+2. **Select CEFR Level**: User chooses their CEFR level (A1–C2) during sign-up or in profile settings.
+3. **View/Refresh Prompt**: User sees a single-sentence, CEFR-tailored prompt and can refresh it using a button with the `arrow-path` Heroicon.
+4. **Write and Receive Feedback**: User types in the editor, sees errors highlighted in red, and views suggestions in a sidebar with apply buttons and explanations.
+5. **Hear Pronunciation**: User clicks a word to hear it pronounced via AWS Polly’s “Arthur” voice.
+6. **Manage Documents**: User views a list of auto-saved documents and can edit them.
 
-Acceptance Criteria:
-Editor supports basic formatting (bold, italic, lists) via Draft.js toolbar.
-Errors are highlighted with red underlines.
-OpenAI API is called max once per 500ms via Next.js API route, returning bundled JSON.
-Word clicks trigger AWS Polly audio with “Arthur” voice.
-Auto-save updates documents table with content, prompt_id, cefr_level, prompt_type, created_at on each debounced change.
-Auto-save indicates “Saving…” and “Saved” status in UI.
-4.5 Sidebar
-F5.1: A sidebar displays OpenAI errors and fluency suggestions in text order.
-F5.2: Errors are categorized as Spelling, Grammar, Punctuation, or Style.
-F5.3: Each correction/suggestion includes a collapsible plain-English explanation (from OpenAI’s explanation field).
-F5.4: Suggestions remain until the user fixes the mistake in the editor.
-Acceptance Criteria:
-Sidebar lists errors/suggestions with category labels (e.g., “Grammar: Subject-verb agreement”).
-Clicking an item expands to show the explanation (e.g., “Use ‘runs’ for singular subjects”).
-Suggestions are removed when the editor text updates and OpenAI confirms the fix.
-4.6 Document Management
-F6.1: Documents auto-save to Supabase with metadata (CEFR level, prompt type, creation date) on each debounced text change.
-F6.2: A “My Documents” page lists all saved documents with title (first 50 characters of content), CEFR level, prompt type, and creation date.
-F6.3: Users can click a document to view/edit it in the editor.
-Acceptance Criteria:
-Auto-save updates documents table on each 500ms debounced change.
-“My Documents” page displays a table with sortable columns (title, CEFR level, prompt type, date).
-Clicking a document loads its content and associated prompt in the editor.
-No revision history is stored.
-5. Non-Functional Requirements
-Performance: Editor feedback updates within 1 second of typing (post-debounce). API calls (OpenAI, AWS Polly) should complete in <500ms under normal conditions.
-Security: Supabase Auth secures user data. Documents and prompts are private to the user. API keys (OpenAI, AWS Polly) are stored in environment variables and accessed via Next.js API routes.
-Scalability: App is a toy project with minimal users, so no caching or advanced optimization is needed.
-Reliability: App handles API failures gracefully (e.g., show “Feedback unavailable” if OpenAI fails).
-Usability: UI is clean, with a focus on simplicity for A1–C2 learners. No accessibility features or multilingual UI required.
-Privacy: User data (documents, errors) is stored securely in Supabase, with no external sharing. GDPR/CCPA compliance is not prioritized for the toy app.
-6. Data Model (Supabase Schema)
-This	is the database schema. It has already been created on Supabase.
+## 4. Functional Requirements
+
+### 4.1 Authentication
+- **F1.1**: Users sign up with email/password via Supabase Auth.
+- **F1.2**: Users log in with email/password.
+- **F1.3**: Users log out.
+- **F1.4**: Users reset passwords via email link.
+- **Acceptance Criteria**:
+  - Sign-up creates a user profile with email and CEFR level.
+  - Login redirects to the editor page.
+  - Logout clears session and redirects to login page.
+  - Password reset sends a secure email link.
+
+### 4.2 User Profile
+- **F2.1**: Users select CEFR level (A1–C2) during sign-up or via profile settings.
+- **F2.2**: CEFR level is stored in Supabase and used for prompt generation.
+- **Acceptance Criteria**:
+  - CEFR level dropdown shows A1, A2, B1, B2, C1, C2.
+  - Selected level persists across sessions.
+  - Default level is B1.
+
+### 4.3 Writing Prompts
+- **F3.1**: A single-sentence, CEFR-tailored prompt (question or instruction) is displayed above the editor on page load.
+- **F3.2**: Users click a “Refresh” button (with `arrow-path` Heroicon) to generate a new prompt.
+- **F3.3**: Prompts are generated via OpenAI API, varied (e.g., narrative, descriptive, argumentative), and stored in Supabase.
+- **F3.4**: Initial implementation uses only OpenAI-generated prompts.
+- **OpenAI Prompt for Prompt Generation**:
+  ```
+  Generate a single-sentence writing prompt for an ESL student at CEFR level {cefr_level}. The prompt should be either a question or an instruction, varied in type (e.g., narrative, descriptive, argumentative), and appropriate for the level's vocabulary and grammar complexity. Return the prompt as plain text.
+  ```
+  - Example: For B1: “Describe your favorite place to relax.”
+- **Acceptance Criteria**:
+  - Prompt is a single sentence, CEFR-appropriate.
+  - “Refresh” generates a new prompt instantly, displayed with `arrow-path` Heroicon.
+  - Prompts are stored in `prompts` table with `id`, `text`, `cefr_level`, `created_at`.
+
+### 4.4 Text Editor
+- **F4.1**: A Draft.js-based editor allows users to type responses to prompts.
+- **F4.2**: Errors (spelling, grammar, punctuation, style) are highlighted in red using inline styles (`ERROR_RED`), with a 500ms debounce.
+- **F4.3**: OpenAI API checks text for errors and fluency suggestions, returning a JSON response with categorized suggestions, offsets, lengths, specific changes, and explanations.
+- **F4.4**: Clicking a word triggers AWS Polly to play its pronunciation using the “Arthur” voice (British English), with no limits, via Draft.js entities.
+- **F4.5**: Document auto-saves to Supabase on each debounced change (500ms), serializing `ContentState` to JSON.
+- **F4.6**: Users apply suggestions via an “Apply” button in the sidebar, using `Modifier.replaceText` to update text and marking `suggestions.is_active=FALSE`.
+- **F4.7**: Suggestions are deduplicated using `text_hash` and `rule_id`, with `draft-js-diff` for change detection.
+- **OpenAI Prompt for Text Checking**:
+  ```
+  You are an ESL writing assistant for a CEFR level {cefr_level} student. Analyze the following text for spelling, grammar, punctuation, and style errors, and provide fluency suggestions to make the text more natural. Return results in JSON format with categorized suggestions, including specific changes (e.g., "Change 'is' to 'are'"), plain-English explanations, offsets, lengths, and rule identifiers. Do not check for tone.
+
+  Text: {text}
+
+  Response format:
+  {
+    "errors": [
+      {
+        "category": "GRAMMAR",
+        "message": "Change 'is' to 'are'",
+        "explanation": "Use 'are' for plural subjects like 'they'.",
+        "offset": 10,
+        "length": 3,
+        "suggestions": ["are"],
+        "rule_id": "SUBJECT_VERB_AGREEMENT"
+      }
+    ],
+    "fluency_suggestions": [
+      {
+        "category": "FLUENCY",
+        "message": "Change 'run fast' to 'runs quickly'",
+        "explanation": "Use 'runs' for present tense and 'quickly' for a natural adverb.",
+        "offset": 10,
+        "length": 8,
+        "suggestions": ["runs quickly"],
+        "rule_id": "FLUENCY_ADVERB"
+      }
+    ]
+  }
+  ```
+- **Acceptance Criteria**:
+  - Editor supports basic formatting (bold, italic, lists) via Draft.js toolbar.
+  - Errors are highlighted with `ERROR_RED` inline style based on OpenAI’s `offset` and `length`.
+  - OpenAI API is called max once per 500ms via Next.js API route.
+  - Word clicks trigger AWS Polly via entity data.
+  - Auto-save serializes `ContentState` JSON to `documents` table.
+  - “Apply” button uses `Modifier.replaceText` and updates `suggestions.is_active`.
+  - Deduplication uses `draft-js-diff` and `text_hash`/`rule_id`.
+  - “Saving…”/“Saved” status is shown.
+
+### 4.5 Sidebar
+- **F5.1**: Sidebar displays OpenAI errors and fluency suggestions in text order.
+- **F5.2**: Suggestions are categorized as Spelling, Grammar, Punctuation, Style, or Fluency.
+- **F5.3**: Each suggestion has a collapsible plain-English explanation and an “Apply” button.
+- **F5.4**: Suggestions remain until fixed (i.e., `is_active=TRUE`).
+- **Acceptance Criteria**:
+  - Sidebar shows category labels (e.g., “Grammar: Change ‘is’ to ‘are’”).
+  - Clicking expands explanation (e.g., “Use ‘are’ for plural subjects”).
+  - “Apply” button replaces text and marks suggestion as resolved.
+  - Suggestions are removed when fixed.
+
+### 4.6 Document Management
+- **F6.1**: Documents auto-save to Supabase with metadata (CEFR level, prompt type, date) on debounced changes.
+- **F6.2**: “My Documents” page lists all saved documents with title (first 50 characters), CEFR level, prompt type, and date.
+- **F6.3**: Users click a document to view/edit it in the editor.
+- **Acceptance Criteria**:
+  - Auto-save updates `documents` table on 500ms debounced changes.
+  - “My Documents” page has a sortable table (title, CEFR level, prompt type, date).
+  - Clicking a document loads its `ContentState` and prompt.
+  - No revision history.
+
+## 5. Non-Functional Requirements
+- **Performance**: Feedback updates within 1 second (post-debounce). API calls (OpenAI, AWS Polly) complete in <500ms under normal conditions.
+- **Security**: Supabase Auth secures user data. API keys (OpenAI, AWS Polly) are stored in environment variables and accessed via Next.js API routes.
+- **Scalability**: Toy app with minimal users; no caching or optimization needed.
+- **Reliability**: Handle API failures gracefully (e.g., show “Feedback unavailable”).
+- **Usability**: Clean UI for A1–C2 learners, using Tailwind CSS and Heroicons. No accessibility or multilingual UI required.
+- **Privacy**: User data (documents, suggestions) stored securely in Supabase. GDPR/CCPA not prioritized.
+
+## 6. Data Model (Supabase Schema)
+```sql
 CREATE TABLE users (
   id UUID PRIMARY KEY,
   email TEXT UNIQUE NOT NULL,
-  cefr_level TEXT CHECK (cefr_level IN ('A1', 'A2', 'B1', 'B2', 'C1', 'C2')) DEFAULT 'B1',
+  cefr_level TEXT CHECK (cefr_level IN ('A1', 'A2', 'B1', 'B2', 'C1', 'C2')) DEFAULT 'A1',
   created_at TIMESTAMP DEFAULT NOW()
 );
+
 CREATE TABLE prompts (
   id UUID PRIMARY KEY,
   text TEXT NOT NULL,
@@ -171,11 +174,10 @@ CREATE TABLE prompts (
   created_at TIMESTAMP DEFAULT NOW()
 );
 
-
 CREATE TABLE documents (
   id UUID PRIMARY KEY,
   user_id UUID REFERENCES users(id),
-  content TEXT NOT NULL,
+  content TEXT NOT NULL, -- JSON string of Draft.js ContentState
   prompt_id UUID REFERENCES prompts(id),
   cefr_level TEXT CHECK (cefr_level IN ('A1', 'A2', 'B1', 'B2', 'C1', 'C2')),
   prompt_type TEXT, -- e.g., 'narrative', 'argumentative'
@@ -183,103 +185,150 @@ CREATE TABLE documents (
   updated_at TIMESTAMP DEFAULT NOW()
 );
 
-
-CREATE TABLE errors (
+CREATE TABLE suggestions (
   id UUID PRIMARY KEY,
   document_id UUID REFERENCES documents(id),
-  category TEXT CHECK (category IN ('SPELLING', 'GRAMMAR', 'PUNCTUATION', 'STYLE')),
-  message TEXT,
-  explanation TEXT,
-  offset INTEGER,
-  length INTEGER,
-  suggestions TEXT[], -- Array of suggested corrections
-  rule_id TEXT,
-  created_at TIMESTAMP DEFAULT NOW()
+  category TEXT CHECK (category IN ('SPELLING', 'GRAMMAR', 'PUNCTUATION', 'STYLE', 'FLUENCY')),
+  message TEXT NOT NULL, -- e.g., "Change 'is' to 'are'"
+  explanation TEXT NOT NULL, -- e.g., "Use 'are' for plural subjects"
+  offset INTEGER NOT NULL,
+  length INTEGER NOT NULL,
+  suggestions TEXT[], -- e.g., ['are']
+  rule_id TEXT NOT NULL, -- e.g., 'SUBJECT_VERB_AGREEMENT'
+  text_hash TEXT NOT NULL, -- MD5 hash of affected text
+  created_at TIMESTAMP DEFAULT NOW(),
+  is_active BOOLEAN DEFAULT TRUE
 );
+CREATE INDEX idx_suggestions_doc_hash ON suggestions (document_id, text_hash);
+```
 
+## 7. Technical Architecture
+- **Frontend**: React, Next.js, Tailwind CSS, @heroicons/react (`arrow-path`), draft-js, draft-js-diff, use-debounce.
+  - **Text Editor**: Draft.js with custom inline styles (`ERROR_RED`) for errors and entities for pronunciation.
+  - **Components**: Login, SignUp, Editor, Sidebar, DocumentList, Profile.
+  - **State Management**: React hooks for `EditorState` and API responses.
+- **Backend**: Next.js API routes for OpenAI and AWS Polly requests.
+  - **Auth**: Supabase Auth for email/password.
+  - **Database**: Supabase PostgreSQL for users, prompts, documents, suggestions.
+- **External Services**:
+  - **OpenAI API**: Prompt generation, grammar/style/fluency checks (via Next.js API routes).
+  - **AWS Polly**: Word pronunciation with “Arthur” voice.
+- **Integration Flow**:
+  1. User types in Draft.js; `EditorState` changes are debounced (500ms).
+  2. Next.js API route uses `draft-js-diff` to send changed text to OpenAI.
+  3. Suggestions are deduplicated using `text_hash` and `rule_id`, stored in Supabase.
+  4. Errors are highlighted with inline styles; suggestions populate sidebar.
+  5. Word clicks trigger AWS Polly via entities.
+  6. Document auto-saves `ContentState` JSON to Supabase.
 
-Technical Architecture
-Frontend: React/Next.js with Tailwind CSS for styling, Heroicons for icons (arrow-path for “Refresh”).
-Text Editor: Draft.js for editing, with custom formats for error highlighting.
-Components: Editor, Sidebar, PromptDisplay, DocumentList, AuthForms.
-State Management: React hooks (useState, useEffect) for editor state and API responses.
-Backend: Next.js API routes for proxying requests to OpenAI and AWS Polly.
-Auth: Supabase Auth for email/password login.
-Database: Supabase PostgreSQL for users, prompts, documents, errors
-External Services:
-OpenAI API: Prompt generation, grammar/spelling/style checks, fluency suggestions (via Next.js API routes).
-AWS Polly: Word pronunciation with “Arthur” voice (British English).
-Integration Flow:
-User types in Draft.js editor; text is debounced (500ms).
-Next.js API route sends text to OpenAI, bundling errors/suggestions in a single JSON response.
-Errors are highlighted in Draft.js; suggestions populate the sidebar.
-Word clicks trigger AWS Polly audio via Next.js API route.
-Document auto-saves to Supabase on each debounced change.
-Prompt generation uses OpenAI via Next.js API route, stored in Supabase.
-9. Feature Checklist
-Authentication
-Sign-up with email/password
-Login with email/password
-Logout
-Password reset via email
-User Profile
-Select CEFR level (A1–C2) during sign-up
-Update CEFR level in profile
-Persist CEFR level in Supabase
-Writing Prompts
-Display single-sentence CEFR-tailored prompt on editor load
-“Refresh” button (with arrow-path Heroicon) generates new prompt via OpenAI
-Store prompts in Supabase (prompts table)
-Prompts are varied, single-sentence questions/instructions
-Text Editor
-Draft.js-based editor with basic formatting
-Highlight errors (spelling, grammar, punctuation, style) in red
-Debounce API calls to 500ms max
-OpenAI API for error detection and fluency suggestions
-Click word to play pronunciation via AWS Polly (“Arthur”)
-Auto-save document to Supabase on debounced change
-Show “Saving…”/“Saved” status
-Sidebar
-Display errors/suggestions in text order
-Categorize as Spelling, Grammar, Punctuation, Style
-Collapsible plain-English explanations
-Remove suggestions when fixed
-Document Management
-Auto-save documents with CEFR level, prompt type, date
-“My Documents” page lists all documents
-Click document to view/edit
-Analytics
-Non-Functional
-Feedback updates within 1 second
-Secure API keys in environment variables
-Handle API failures gracefully
-Clean, simple UI with Heroicons
-Use OpenAI via Next.js API routes
-10. Future Considerations
-Use stored prompts to mix with OpenAI-generated ones.
-Add LanguageTool for cost-efficient grammar checks.
-Implement teacher accounts for reviewing student work.
-Support multilingual UI for non-English ESL learners.
-Introduce basic analytics dashboard if user base grows.
-11. Wireframes (Text-Based)
-Login Page:
-Email input, password input, “Login” button, “Sign Up” link, “Forgot Password” link.
-Sign-Up Page:
-Email input, password input, CEFR level dropdown (A1–C2), “Sign Up” button.
-Editor Page:
-Top: Single-sentence prompt, “Refresh” button with arrow-path Heroicon, CEFR level display.
-Center: Draft.js editor with red underlines for errors.
-Right: Sidebar with categorized errors/suggestions, collapsible explanations.
-Bottom: “Saving…”/“Saved” status indicator.
-My Documents Page:
-Table with columns: Title (first 50 chars), CEFR Level, Prompt Type, Date.
-Click row to load document in editor.
-12. Dependencies
-Frontend: React, Next.js, Tailwind CSS, Draft.js, use-debounce, @heroicons/react
-Backend: Supabase (Auth, PostgreSQL), openai for API calls, aws-sdk for Polly.
-Environment Variables: OPENAI_API_KEY, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY.
-13. Success Metrics
-Users can complete a writing session (prompt response, error fixes) in <10 minutes.
-90% of API calls complete in <500ms.
-Documents auto-save successfully on each debounced change.
-No critical bugs in auth, editor, or document management.
+## 8. Assumptions and Constraints
+
+- **Assumptions**:
+  - Users have reliable internet.
+  - OpenAI provides accurate grammar/style/fluency feedback.
+  - AWS Polly’s “Arthur” voice is suitable.
+  - Minimal user base allows simple architecture.
+
+- **Constraints**:
+  - No accessibility or multilingual UI.
+  - No usage limits or monetization.
+  - No analytics or gamification.
+  - Toy app, no scalability optimizations.
+
+## 9. Screen Checklists
+### 9.1 Login Screen
+- [ ] Display email input field (Tailwind: `w-full rounded border-gray-300`).
+- [ ] Display password input field (type="password", toggle visibility icon, Tailwind: `w-full rounded`).
+- [ ] Display “Login” button (Tailwind: `bg-blue-600 text-white`, disabled if fields empty).
+- [ ] Display “Sign Up” link (Tailwind: `text-blue-500 hover:underline`) to `/signup`.
+- [ ] Display “Forgot Password” link (Tailwind: `text-blue-500 hover:underline`) to password reset.
+- [ ] Call Supabase Auth `signInWithPassword` on button click.
+- [ ] Show error message for invalid credentials (Tailwind: `text-red-500`).
+- [ ] Redirect to `/editor` on successful login.
+- [ ] Center content vertically/horizontally (Tailwind: `flex justify-center items-center h-screen`).
+- [ ] Responsive: Stacked inputs on mobile (Tailwind: `flex-col`).
+
+### 9.3 Editor Screen
+- [ ] Display single-sentence prompt (Tailwind: `text-lg font-semibold mb-4`).
+- [ ] Display “Refresh” button with `arrow-path` Heroicon (Tailwind: `bg-gray-200 p-2 rounded`).
+- [ ] Call OpenAI API via `/api/generate-prompt` on “Refresh” click, store in `prompts` table.
+- [ ] Display CEFR level (Tailwind: `text-sm text-gray-500`).
+- [ ] Render Draft.js editor (Tailwind: `w-full border-gray-300 p-4 h-96`).
+- [ ] Apply `ERROR_RED` inline style for errors (CSS: `text-decoration: underline red`).
+- [ ] Add entities to words for pronunciation (click triggers AWS Polly via `/api/pronounce`).
+- [ ] Debounce text changes (500ms) using `use-debounce`.
+- [ ] Use `draft-js-diff` to send changed text to `/api/check-text` (OpenAI).
+- [ ] Auto-save `ContentState` JSON to `documents` table on debounced change.
+- [ ] Display “Saving…” (Tailwind: `text-gray-500`) during save, “Saved” (Tailwind: `text-green-500`) on success.
+- [ ] Show sidebar (Tailwind: `w-1/3 border-l p-4`) with suggestions in text order.
+- [ ] Each suggestion shows category (e.g., “Grammar”), message (e.g., “Change ‘is’ to ‘are’”), “Apply” button (Tailwind: `bg-blue-500 text-white`), and collapsible explanation (Tailwind: `<details>`).
+- [ ] “Apply” button calls `Modifier.replaceText`, updates `suggestions.is_active`.
+- [ ] Deduplicate suggestions using `text_hash` and `rule_id`.
+- [ ] Navigation bar with “My Documents” (to `/documents`) and “Profile” (to `/profile`) links (Tailwind: `bg-gray-800 text-white`).
+- [ ] Responsive: Sidebar stacks below editor on mobile (Tailwind: `md:flex`).
+
+### 9.4 My Documents Screen
+- [ ] Display table of saved documents (Tailwind: `w-full border-collapse`).
+- [ ] Columns: Title (first 50 chars, Tailwind: `truncate`), CEFR Level, Prompt Type, Date (sortable, Tailwind: `cursor-pointer`).
+- [ ] Fetch documents from `documents` table, joined with `prompts` for prompt text.
+- [ ] Clicking a row loads document in `/editor` with `ContentState` and prompt.
+- [ ] Show “No documents” message if empty (Tailwind: `text-gray-500`).
+- [ ] Navigation bar with “Editor” (to `/editor`) and “Profile” (to `/profile`) links (Tailwind: `bg-gray-800 text-white`).
+- [ ] Responsive: Table scrolls horizontally on mobile (Tailwind: `overflow-x-auto`).
+
+### 9.5 Profile Screen
+- [ ] Display email (read-only, Tailwind: `text-gray-700`).
+- [ ] Display CEFR level dropdown (A1–C2, Tailwind: `border-gray-300`).
+- [ ] Display “Save” button (Tailwind: `bg-blue-600 text-white`, disabled if unchanged).
+- [ ] Update `users` table on save.
+- [ ] Show success message (Tailwind: `text-green-500`) or error (Tailwind: `text-red-500`).
+- [ ] Display “Logout” button (Tailwind: `bg-red-500 text-white`) to clear session and redirect to `/login`.
+- [ ] Navigation bar with “Editor” (to `/editor`) and “My Documents” (to `/documents`) links (Tailwind: `bg-gray-800 text-white`).
+- [ ] Center content (Tailwind: `flex justify-center items-center h-screen`).
+- [ ] Responsive: Stacked inputs on mobile.
+
+## 10. Future Considerations
+- Mix stored prompts with OpenAI-generated ones.
+- Add LanguageTool for cost-efficient checks.
+- Support teacher accounts for reviewing work.
+- Add multilingual UI for non-English ESL learners.
+
+## 11. Wireframes (Text-Based)
+- **Login Screen**:
+  - Centered form: Email input, password input, “Login” button, “Sign Up” link, “Forgot Password” link.
+- **Sign-Up Screen**:
+  - Centered form: Email input, password input, CEFR dropdown, “Sign Up” button, “Login” link.
+- **Editor Screen**:
+  - Top: Prompt, “Refresh” (`arrow-path`), CEFR level.
+  - Center: Draft.js editor with red underlines.
+  - Right: Sidebar with suggestions (category, message, “Apply”, explanation).
+  - Bottom: “Saving…”/“Saved” status.
+  - Top-right: Navigation to “My Documents”, “Profile”.
+- **My Documents Screen**:
+  - Table: Title, CEFR Level, Prompt Type, Date.
+  - Top-right: Navigation to “Editor”, “Profile”.
+- **Profile Screen**:
+  - Centered: Email, CEFR dropdown, “Save” button, “Logout” button.
+  - Top-right: Navigation to “Editor”, “My Documents”.
+
+## 12. Dependencies
+- **Frontend**: React, Next.js, Tailwind CSS, draft-js, draft-js-diff, use-debounce, @heroicons/react (`arrow-path`).
+- **Backend**: Supabase (Auth, PostgreSQL), openai, aws-sdk.
+- **Environment Variables**: `OPENAI_API_KEY`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `SUPABASE_URL`, `SUPABASE_KEY`.
+
+## 13. Success Metrics
+- Users complete a writing session in <10 minutes.
+- 90% of API calls complete in <500ms.
+- Documents auto-save successfully on debounced changes.
+- No critical bugs in auth, editor, or document management.
+
+---
+
+**Approval**:
+- Product Manager: [TBD]
+- Engineering Lead: [TBD]
+- Design Lead: [TBD]
+
+**Version History**:
+- v1.0, June 17, 2025: Initial complete PRD with Draft.js.
+- v1.1, June 17, 2025: Removed interactions and

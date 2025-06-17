@@ -1,0 +1,13 @@
+Use these descriptions for the 6 CEFR levels:
+
+A1 (Beginner): You can understand and use simple phrases for basic needs, like greetings or ordering food, but struggle with full conversations.
+
+A2 (Elementary): You can handle short, routine conversations about familiar topics, like shopping or family, with basic vocabulary and simple sentences.
+
+B1 (Intermediate): You can discuss everyday topics, like work or hobbies, with enough confidence to express opinions, though you may make some mistakes.
+
+B2 (Upper-Intermediate): You can have detailed conversations on a wide range of topics, including abstract ideas, with clear expression and only occasional errors.
+
+C1 (Advanced): You can fluently discuss complex topics, like politics or culture, with precision and ease, understanding almost everything you hear or read.
+
+C2 (Proficient): You can speak and understand the language effortlessly, like a native speaker, even in academic or professional settings with nuanced vocabulary.
