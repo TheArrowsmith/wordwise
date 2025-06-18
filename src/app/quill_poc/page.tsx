@@ -130,11 +130,9 @@ const TextEditor = () => {
 
     // Update editor state while preserving current cursor position
     const currentSelection = editorState.getSelection();
-    const newEditorState = EditorState.push(
-      editorState,
-      newContentState,
-      'apply-entity'
-    );
+    const newEditorState = EditorState.set(editorState, {
+      currentContent: newContentState,
+    });
     
     // Restore original selection
     setEditorState(EditorState.forceSelection(newEditorState, currentSelection));
@@ -167,11 +165,9 @@ const TextEditor = () => {
       null
     );
 
-    const newEditorState = EditorState.push(
-      editorState,
-      newContentState,
-      'apply-entity'
-    );
+    const newEditorState = EditorState.set(editorState, {
+      currentContent: newContentState,
+    });
 
     // Restore original selection
     setEditorState(EditorState.forceSelection(newEditorState, currentSelection));
@@ -211,11 +207,9 @@ const TextEditor = () => {
       replaceText
     );
 
-    const newEditorState = EditorState.push(
-      editorState,
-      newContentState,
-      'insert-characters'
-    );
+    const newEditorState = EditorState.set(editorState, {
+      currentContent: newContentState,
+    });
 
     // Restore original selection
     setEditorState(EditorState.forceSelection(newEditorState, currentSelection));
@@ -247,7 +241,7 @@ const TextEditor = () => {
       
       // Update highlight positions and check for content changes
       const updatedHighlights: HighlightState[] = [];
-      const highlightsToRemove: number[] = [];
+      const highlightsToRemove: { id: number, from: number, to: number }[] = [];
       
       highlights.forEach(highlight => {
         let newFrom = highlight.from;
@@ -258,14 +252,21 @@ const TextEditor = () => {
           newFrom = highlight.from + textLengthDiff;
           newTo = highlight.to + textLengthDiff;
         } else if (changePosition < highlight.to) {
-          // Change happened within the highlight - remove it
-          highlightsToRemove.push(highlight.id);
+          // Change happened within the highlight - we need to remove the entire affected range
+          // Calculate the full range that might be affected after the change
+          const affectedStart = highlight.from;
+          const affectedEnd = Math.max(highlight.to, highlight.to + textLengthDiff);
+          highlightsToRemove.push({ 
+            id: highlight.id, 
+            from: affectedStart, 
+            to: Math.min(affectedEnd, newText.length)
+          });
           return;
         }
         
         // Check if the highlight is still valid
         if (newFrom < 0 || newTo > newText.length || newFrom >= newTo) {
-          highlightsToRemove.push(highlight.id);
+          highlightsToRemove.push({ id: highlight.id, from: highlight.from, to: highlight.to });
           return;
         }
         
@@ -274,7 +275,7 @@ const TextEditor = () => {
         const newHighlightText = newText.slice(newFrom, newTo);
         
         if (originalText !== newHighlightText) {
-          highlightsToRemove.push(highlight.id);
+          highlightsToRemove.push({ id: highlight.id, from: newFrom, to: newTo });
           return;
         }
         
@@ -285,23 +286,53 @@ const TextEditor = () => {
         });
       });
 
-      // Update highlights state if there were changes
-      if (updatedHighlights.length !== highlights.length || 
-          updatedHighlights.some((h, i) => highlights[i] && (h.from !== highlights[i].from || h.to !== highlights[i].to))) {
-        setHighlights(updatedHighlights);
+      // If we need to remove highlights, remove their entities from the content
+      let finalEditorState = newEditorState;
+      if (highlightsToRemove.length > 0) {
+        let updatedContentState = newContentState;
+        const firstBlock = newContentState.getFirstBlock();
+        const blockKey = firstBlock.getKey();
+        
+        // Remove entities for highlights that should be removed
+        highlightsToRemove.forEach(highlight => {
+          const validStart = Math.max(0, Math.min(highlight.from, newText.length));
+          const validEnd = Math.max(validStart, Math.min(highlight.to, newText.length));
+          
+          if (validStart < validEnd) {
+            const selection = SelectionState.createEmpty(blockKey).merge({
+              anchorOffset: validStart,
+              focusOffset: validEnd,
+            });
+            
+            updatedContentState = Modifier.applyEntity(updatedContentState, selection, null);
+          }
+        });
+
+        if (updatedContentState !== newContentState) {
+          finalEditorState = EditorState.set(newEditorState, {
+            currentContent: updatedContentState,
+          });
+          // Preserve the cursor position
+          finalEditorState = EditorState.forceSelection(finalEditorState, currentSelection);
+        }
       }
+
+      // Update highlights state
+      setHighlights(updatedHighlights);
       
       // Clean up replace text inputs for removed highlights
       if (highlightsToRemove.length > 0) {
         setReplaceTexts(prev => {
           const newTexts = { ...prev };
-          highlightsToRemove.forEach(id => delete newTexts[id]);
+          highlightsToRemove.forEach(highlight => delete newTexts[highlight.id]);
           return newTexts;
         });
       }
+      
+      setEditorState(finalEditorState);
+    } else {
+      setEditorState(newEditorState);
     }
-    
-    setEditorState(newEditorState);
   };
 
   return (
