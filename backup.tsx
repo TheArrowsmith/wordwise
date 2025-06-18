@@ -96,23 +96,6 @@ const TextEditor = () => {
       return;
     }
 
-    // Check for overlapping highlights
-    const newStart = offset;
-    const newEnd = offset + length;
-    
-    const hasOverlap = highlights.some(highlight => {
-      const existingStart = highlight.from;
-      const existingEnd = highlight.to;
-      
-      // Check if ranges overlap: new range starts before existing ends AND new range ends after existing starts
-      return newStart < existingEnd && newEnd > existingStart;
-    });
-    
-    if (hasOverlap) {
-      alert('Cannot add highlight: overlaps with existing highlight');
-      return;
-    }
-
     const newHighlight: HighlightState = {
       id: Date.now(),
       from: offset,
@@ -200,7 +183,7 @@ const TextEditor = () => {
 
   const replaceHighlightedText = (highlightId: number) => {
     const highlight = highlights.find(h => h.id === highlightId);
-    const replaceText = replaceTexts[highlightId] ?? '';
+    const replaceText = replaceTexts[highlightId] || '';
     
     if (!highlight) return;
 
@@ -447,6 +430,7 @@ const TextEditor = () => {
                   <button
                     onClick={() => replaceHighlightedText(h.id)}
                     className="px-3 py-1 bg-green-500 text-white text-xs rounded hover:bg-green-600"
+                    disabled={!replaceTexts[h.id]?.trim()}
                   >
                     Replace
                   </button>
