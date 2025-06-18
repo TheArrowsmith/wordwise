@@ -11,15 +11,24 @@
   "dependencies": {
     "@heroicons/react": "^2.2.0",
     "@supabase/supabase-js": "^2.50.0",
+    "@tiptap/core": "^2.14.0",
+    "@tiptap/extension-highlight": "^2.14.0",
+    "@tiptap/react": "^2.14.0",
+    "@tiptap/starter-kit": "^2.14.0",
     "@types/uuid": "^10.0.0",
+    "autoprefixer": "^10.4.21",
     "dotenv": "^16.5.0",
     "draft-js": "^0.11.7",
     "immutable": "^5.1.3",
     "next": "15.3.3",
     "openai": "^5.5.0",
     "placeholder-loading": "^0.7.0",
+    "postcss": "^8.5.6",
+    "quill": "^2.0.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "slate": "^0.117.0",
+    "slate-react": "^0.117.1",
     "use-debounce": "^10.0.5",
     "uuid": "^11.1.0"
   },
@@ -32,7 +41,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "15.3.3",
-    "tailwindcss": "^4",
+    "tailwindcss": "^4.1.10",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3"
   }
