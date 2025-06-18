@@ -3,3 +3,5 @@ Ensure that all text is readable: use dark text on light backgrounds or light te
 When implementing requirements from a checklist in a markdown document, update the markdown to check the requirements off as you complete them.
 
 Typescript types should generally go in `src/types.ts`, unless they are very specific to the particular file that uses them. Before adding a new type, check to see that the type you need doesn't already exist in `src/types.ts`.
+
+You can assume that a Next server is already running on localhost:3000. If you need to test changes against the server, don't run `npm run dev` - instead check what's happening on localhost:3000, which should have already autoreloaded with your changes.
