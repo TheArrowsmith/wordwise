@@ -6,6 +6,8 @@ export type CEFRLevel = 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2';
 // Feedback category union type
 export type FeedbackCategory = 'spelling' | 'grammar' | 'fluency' | 'clarity';
 
+export type FeedbackType = 'spelling' | 'grammar' | 'fluency';
+
 // Export User type for convenience
 export type { User };
 

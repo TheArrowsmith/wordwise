@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { 
   Editor, 
   EditorState, 
@@ -12,7 +12,7 @@ import {
 } from 'draft-js';
 import dynamic from 'next/dynamic';
 
-type FeedbackType = 'spelling' | 'grammar' | 'fluency';
+import { FeedbackType } from "@/types";
 
 interface FeedbackState {
   id: number;
@@ -72,11 +72,33 @@ const findFeedbackEntities = (
   );
 };
 
+function debounceAndThrottle(callback: (...args: any[]) => void, debounceDelay: number, throttleInterval: number) {
+  let debounceTimer: NodeJS.Timeout;
+  let lastCallTime = 0;
+
+  return function (...args: any[]) {
+    const now = Date.now();
+
+    // Clear any existing debounce timer
+    clearTimeout(debounceTimer);
+
+    // If enough time has passed since the last call (throttleInterval), call immediately
+    if (now - lastCallTime >= throttleInterval) {
+      callback(...args);
+      lastCallTime = now;
+    } else {
+      // Otherwise, set a debounce timer to call after the debounceDelay
+      debounceTimer = setTimeout(() => {
+        callback(...args);
+        lastCallTime = Date.now();
+      }, debounceDelay);
+    }
+  };
+}
+
 const TextEditor = () => {
   const [feedbacks, setFeedbacks] = useState<FeedbackState[]>([]);
-  const [feedbackOffset, setFeedbackOffset] = useState('');
-  const [feedbackLength, setFeedbackLength] = useState('');
-  const [feedbackType, setFeedbackType] = useState<FeedbackType>('spelling');
+  const [isLoadingFeedback, setIsLoadingFeedback] = useState(false);
   
   // Create decorator for feedbacks
   const decorator = new CompositeDecorator([
@@ -89,7 +111,7 @@ const TextEditor = () => {
   const [editorState, setEditorState] = useState(() =>
     EditorState.createWithContent(
       ContentState.createFromText(
-        "Click here to start typing. Try adding some text, then use the controls on the right to highlight text or replace portions of it. For example, type 'Hello world' and then highlight from offset 0 with length 5 to highlight 'Hello'."
+        "Click here to start typing. As you type, feedback will automatically appear on random words to demonstrate the highlighting system."
       ),
       decorator
     )
@@ -97,45 +119,69 @@ const TextEditor = () => {
 
   const editorRef = useRef<Editor>(null);
 
-  const addFeedback = () => {
-    const offset = parseInt(feedbackOffset);
-    const length = parseInt(feedbackLength);
-    
-    if (isNaN(offset) || isNaN(length) || offset < 0 || length <= 0) {
-      alert('Invalid offset or length');
+  const getFeedback = useCallback(async (currentEditorState: EditorState) => {
+    // 25% chance of adding feedback
+    if (Math.random() > 0.25) {
       return;
     }
 
-    const contentState = editorState.getCurrentContent();
+    const contentState = currentEditorState.getCurrentContent();
     const text = contentState.getPlainText();
     
-    if (offset + length > text.length) {
-      alert('Invalid offset or length');
+    // Split text into words and find their positions
+    const words = text.match(/\b\w+\b/g);
+    if (!words || words.length === 0) {
       return;
     }
 
-    // Check for overlapping feedbacks
-    const newStart = offset;
-    const newEnd = offset + length;
+    // Find all word positions
+    const wordPositions: { word: string; start: number; end: number }[] = [];
+    let searchIndex = 0;
     
-    const hasOverlap = feedbacks.some(feedback => {
-      const existingStart = feedback.from;
-      const existingEnd = feedback.to;
-      
-      // Check if ranges overlap: new range starts before existing ends AND new range ends after existing starts
-      return newStart < existingEnd && newEnd > existingStart;
+    words.forEach(word => {
+      const wordIndex = text.indexOf(word, searchIndex);
+      if (wordIndex !== -1) {
+        const start = wordIndex;
+        const end = wordIndex + word.length;
+        
+        // Check if this word already has feedback
+        const hasExistingFeedback = feedbacks.some(feedback => 
+          (feedback.from <= start && feedback.to > start) ||
+          (feedback.from < end && feedback.to >= end) ||
+          (start <= feedback.from && end > feedback.from)
+        );
+        
+        if (!hasExistingFeedback) {
+          wordPositions.push({ word, start, end });
+        }
+        
+        searchIndex = wordIndex + word.length;
+      }
     });
-    
-    if (hasOverlap) {
-      alert('Cannot add feedback: overlaps with existing feedback');
+
+    if (wordPositions.length === 0) {
       return;
     }
+
+    // Show loading spinner
+    setIsLoadingFeedback(true);
+
+    // Simulate API latency with random delay
+    const delay = Math.floor(Math.random() * 1500) + 500; // 500-2000ms
+    await new Promise(resolve => setTimeout(resolve, delay));
+
+    // Randomly select a word
+    const randomWord = wordPositions[Math.floor(Math.random() * wordPositions.length)];
+    
+    // Randomly select feedback type
+    const feedbackTypes: FeedbackType[] = ['spelling', 'grammar', 'fluency'];
+    const randomType = feedbackTypes[Math.floor(Math.random() * feedbackTypes.length)];
 
     const newFeedback: FeedbackState = {
       id: Date.now(),
-      from: offset,
-      to: offset + length,
-      type: feedbackType,
+      from: randomWord.start,
+      to: randomWord.end,
+      type: randomType,
       explanation: "You should change something",
       suggestion: "[NEW TEXT]",
     };
@@ -144,7 +190,7 @@ const TextEditor = () => {
     const contentStateWithEntity = contentState.createEntity(
       'FEEDBACK',
       'MUTABLE',
-      { type: feedbackType, id: newFeedback.id }
+      { type: randomType, id: newFeedback.id }
     );
     const entityKey = contentStateWithEntity.getLastCreatedEntityKey();
 
@@ -154,8 +200,8 @@ const TextEditor = () => {
 
     // Create selection for the range to highlight
     const selection = SelectionState.createEmpty(blockKey).merge({
-      anchorOffset: offset,
-      focusOffset: offset + length,
+      anchorOffset: randomWord.start,
+      focusOffset: randomWord.end,
     });
 
     // Apply the entity to the selected range
@@ -166,17 +212,22 @@ const TextEditor = () => {
     );
 
     // Update editor state while preserving current cursor position
-    const currentSelection = editorState.getSelection();
-    const newEditorState = EditorState.set(editorState, {
+    const currentSelection = currentEditorState.getSelection();
+    const newEditorState = EditorState.set(currentEditorState, {
       currentContent: newContentState,
     });
     
-    // Restore original selection
+    // Restore original selection and update states
     setEditorState(EditorState.forceSelection(newEditorState, currentSelection));
     setFeedbacks(prev => [...prev, newFeedback]);
-    setFeedbackOffset('');
-    setFeedbackLength('');
-  };
+    setIsLoadingFeedback(false);
+  }, [feedbacks]);
+
+  // Create debounced and throttled version of getFeedback
+  const debouncedGetFeedback = useCallback(
+    debounceAndThrottle(getFeedback, 500, 1000), // 1s debounce, 3s throttle
+    [getFeedback]
+  );
 
   const removeFeedback = (id: number) => {
     const feedback = feedbacks.find(f => f.id === id);
@@ -391,6 +442,9 @@ const TextEditor = () => {
       setFeedbacks(updatedFeedbacks);
       
       setEditorState(finalEditorState);
+      
+      // Trigger debounced feedback generation
+      debouncedGetFeedback(finalEditorState);
     } else {
       setEditorState(newEditorState);
     }
@@ -412,56 +466,34 @@ const TextEditor = () => {
 
       {/* Control Panel */}
       <div className="w-1/3 p-4 bg-gray-200">
-        <h2 className="text-lg font-bold mb-4 text-black">Control Panel</h2>
+        <h2 className="text-lg font-bold mb-4 text-black">Feedback Panel</h2>
 
-        {/* Feedback Controls */}
-        <div className="mb-6">
-          <h3 className="text-md font-semibold mb-2 text-black">Add Feedback</h3>
-          <input
-            type="number"
-            value={feedbackOffset}
-            onChange={(e) => setFeedbackOffset(e.target.value)}
-            placeholder="Offset (0-based)"
-            className="w-full p-2 mb-2 border rounded bg-white text-black placeholder-gray-600"
-          />
-          <input
-            type="number"
-            value={feedbackLength}
-            onChange={(e) => setFeedbackLength(e.target.value)}
-            placeholder="Length"
-            className="w-full p-2 mb-2 border rounded bg-white text-black placeholder-gray-600"
-          />
-          <select
-            value={feedbackType}
-            onChange={(e) => setFeedbackType(e.target.value as FeedbackType)}
-            className="w-full p-2 mb-2 border rounded bg-white text-black"
-          >
-            <option value="spelling">Spelling</option>
-            <option value="grammar">Grammar</option>
-            <option value="fluency">Fluency</option>
-          </select>
-          <button
-            onClick={addFeedback}
-            className="w-full p-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-          >
-            Add Feedback
-          </button>
-        </div>
-
-        {/* Instructions */}
-        <div className="mb-6">
-          <h3 className="text-md font-semibold mb-2 text-black">Instructions</h3>
-          <p className="text-sm text-gray-600">
-            Add feedback using offset and length above. Each feedback will have an apply option below.
-            If you edit any text within a feedback, that feedback will be automatically removed.
-          </p>
-        </div>
+        {/* Loading Spinner */}
+        {isLoadingFeedback && (
+          <div className="mb-4 flex items-center justify-center">
+            <svg 
+              className="animate-spin h-5 w-5 text-gray-600" 
+              xmlns="http://www.w3.org/2000/svg" 
+              fill="none" 
+              viewBox="0 0 24 24"
+            >
+              <path 
+                strokeLinecap="round" 
+                strokeLinejoin="round" 
+                strokeWidth={2} 
+                stroke="currentColor"
+                d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"
+              />
+            </svg>
+            <span className="ml-2 text-sm text-gray-600">Analyzing text...</span>
+          </div>
+        )}
 
         {/* Feedback List */}
         <div>
           <h3 className="text-md font-semibold mb-2 text-black">Feedback</h3>
           {feedbacks.length === 0 ? (
-            <p className="text-gray-600">No feedback yet</p>
+            <p className="text-gray-600">No feedback yet - start typing to see automatic feedback appear!</p>
           ) : (
             feedbacks
               .sort((a, b) => a.from - b.from) // Sort by text position
