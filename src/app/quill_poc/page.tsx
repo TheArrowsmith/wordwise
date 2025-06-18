@@ -240,11 +240,59 @@ const TextEditor = () => {
       currentContent: newContentState,
     });
 
+    // Calculate the length difference caused by the replacement
+    const originalLength = feedback.to - feedback.from;
+    const newLength = feedback.suggestion.length;
+    const lengthDiff = newLength - originalLength;
+
+    // Update positions of other feedback items that come after this one
+    const updatedFeedbacks = feedbacks
+      .filter(f => f.id !== feedbackId) // Remove the applied feedback
+      .map(f => {
+        if (f.from >= feedback.to) {
+          // Feedback comes after the replaced text - adjust both start and end
+          return {
+            ...f,
+            from: f.from + lengthDiff,
+            to: f.to + lengthDiff
+          };
+        } else if (f.from < feedback.from && f.to > feedback.from) {
+          // Feedback overlaps with the replaced text - remove it as it's now invalid
+          return null;
+        }
+        // Feedback comes before the replaced text - no change needed
+        return f;
+      })
+      .filter(f => f !== null) as FeedbackState[];
+
+    // Remove entities for any overlapping feedbacks that were invalidated
+    let finalContentState = newContentState;
+    const invalidatedFeedbacks = feedbacks.filter(f => 
+      f.id !== feedbackId && 
+      f.from < feedback.from && 
+      f.to > feedback.from
+    );
+
+    if (invalidatedFeedbacks.length > 0) {
+      invalidatedFeedbacks.forEach(f => {
+        const invalidSelection = SelectionState.createEmpty(blockKey).merge({
+          anchorOffset: Math.max(0, f.from),
+          focusOffset: Math.min(finalContentState.getPlainText().length, f.to + lengthDiff),
+        });
+        
+        finalContentState = Modifier.applyEntity(finalContentState, invalidSelection, null);
+      });
+    }
+
+    const finalEditorState = EditorState.set(newEditorState, {
+      currentContent: finalContentState,
+    });
+
     // Restore original selection
-    setEditorState(EditorState.forceSelection(newEditorState, currentSelection));
+    setEditorState(EditorState.forceSelection(finalEditorState, currentSelection));
     
-    // Remove this feedback from state
-    setFeedbacks(prev => prev.filter(f => f.id !== feedbackId));
+    // Update feedbacks state with adjusted positions
+    setFeedbacks(updatedFeedbacks);
   };
 
   const handleEditorChange = (newEditorState: EditorState) => {
@@ -415,39 +463,50 @@ const TextEditor = () => {
           {feedbacks.length === 0 ? (
             <p className="text-gray-600">No feedback yet</p>
           ) : (
-            feedbacks.map((f) => (
-              <div key={f.id} className="mb-3 p-3 bg-white rounded border">
-                <div className="flex items-center mb-2">
-                  <span
-                    className="w-6 h-6 mr-2 inline-block rounded"
-                    style={{ backgroundColor: getFeedbackColor(f.type) }}
-                  ></span>
-                  <span className="text-black text-sm flex-1">
-                    {f.type.charAt(0).toUpperCase() + f.type.slice(1)} - Offset: {f.from}, Length: {f.to - f.from}
-                  </span>
-                  <button
-                    onClick={() => removeFeedback(f.id)}
-                    className="ml-2 px-2 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600"
-                  >
-                    Remove
-                  </button>
-                </div>
-                <div className="mb-2">
-                  <p className="text-xs text-gray-600 mb-1">Explanation:</p>
-                  <p className="text-sm text-black">{f.explanation}</p>
-                </div>
-                <div className="mb-2">
-                  <p className="text-xs text-gray-600 mb-1">Suggestion:</p>
-                  <p className="text-sm text-black">{f.suggestion}</p>
-                </div>
-                <button
-                  onClick={() => applyFeedback(f.id)}
-                  className="w-full px-3 py-1 bg-green-500 text-white text-xs rounded hover:bg-green-600"
-                >
-                  Apply
-                </button>
-              </div>
-            ))
+            feedbacks
+              .sort((a, b) => a.from - b.from) // Sort by text position
+              .map((f) => {
+                const currentText = editorState.getCurrentContent().getPlainText();
+                const textExtract = currentText.slice(f.from, f.to);
+                
+                return (
+                  <div key={f.id} className="mb-3 p-3 bg-white rounded border">
+                    <div className="flex items-center mb-2">
+                      <span
+                        className="w-6 h-6 mr-2 inline-block rounded"
+                        style={{ backgroundColor: getFeedbackColor(f.type) }}
+                      ></span>
+                      <span className="text-black text-sm flex-1">
+                        {f.type.charAt(0).toUpperCase() + f.type.slice(1)}
+                      </span>
+                      <button
+                        onClick={() => removeFeedback(f.id)}
+                        className="ml-2 px-2 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                    <div className="mb-2">
+                      <p className="text-xs text-gray-600 mb-1">Text:</p>
+                      <p className="text-sm text-black font-mono bg-gray-100 p-1 rounded">"{textExtract}"</p>
+                    </div>
+                    <div className="mb-2">
+                      <p className="text-xs text-gray-600 mb-1">Explanation:</p>
+                      <p className="text-sm text-black">{f.explanation}</p>
+                    </div>
+                    <div className="mb-2">
+                      <p className="text-xs text-gray-600 mb-1">Suggestion:</p>
+                      <p className="text-sm text-black">{f.suggestion}</p>
+                    </div>
+                    <button
+                      onClick={() => applyFeedback(f.id)}
+                      className="w-full px-3 py-1 bg-green-500 text-white text-xs rounded hover:bg-green-600"
+                    >
+                      Apply
+                    </button>
+                  </div>
+                );
+              })
           )}
         </div>
       </div>
