@@ -11,6 +11,7 @@ import {
   ContentBlock
 } from 'draft-js';
 import dynamic from 'next/dynamic';
+import { throttle } from 'lodash';
 
 import { FeedbackType } from "@/types";
 
@@ -72,30 +73,6 @@ const findFeedbackEntities = (
   );
 };
 
-function debounceAndThrottle(callback: (...args: any[]) => void, debounceDelay: number, throttleInterval: number) {
-  let debounceTimer: NodeJS.Timeout;
-  let lastCallTime = 0;
-
-  return function (...args: any[]) {
-    const now = Date.now();
-
-    // Clear any existing debounce timer
-    clearTimeout(debounceTimer);
-
-    // If enough time has passed since the last call (throttleInterval), call immediately
-    if (now - lastCallTime >= throttleInterval) {
-      callback(...args);
-      lastCallTime = now;
-    } else {
-      // Otherwise, set a debounce timer to call after the debounceDelay
-      debounceTimer = setTimeout(() => {
-        callback(...args);
-        lastCallTime = Date.now();
-      }, debounceDelay);
-    }
-  };
-}
-
 const TextEditor = () => {
   const [feedbacks, setFeedbacks] = useState<FeedbackState[]>([]);
   const [isLoadingFeedback, setIsLoadingFeedback] = useState(false);
@@ -119,11 +96,9 @@ const TextEditor = () => {
 
   const editorRef = useRef<Editor>(null);
 
-  const getFeedback = useCallback(async (currentEditorState: EditorState) => {
-    // 25% chance of adding feedback
-    if (Math.random() > 0.25) {
-      return;
-    }
+  const getFeedback = useCallback(async (currentEditorState: EditorState, existingFeedbacks: FeedbackState[]) => {
+    // Show loading spinner
+    setIsLoadingFeedback(true);
 
     const contentState = currentEditorState.getCurrentContent();
     const text = contentState.getPlainText();
@@ -145,7 +120,7 @@ const TextEditor = () => {
         const end = wordIndex + word.length;
         
         // Check if this word already has feedback
-        const hasExistingFeedback = feedbacks.some(feedback => 
+        const hasExistingFeedback = existingFeedbacks.some(feedback => 
           (feedback.from <= start && feedback.to > start) ||
           (feedback.from < end && feedback.to >= end) ||
           (start <= feedback.from && end > feedback.from)
@@ -163,16 +138,20 @@ const TextEditor = () => {
       return;
     }
 
-    // Show loading spinner
-    setIsLoadingFeedback(true);
 
     // Simulate API latency with random delay
-    const delay = Math.floor(Math.random() * 1500) + 500; // 500-2000ms
+    const delay = Math.floor(Math.random() * 1000) + 500; // 500-2000ms
     await new Promise(resolve => setTimeout(resolve, delay));
 
     // Randomly select a word
     const randomWord = wordPositions[Math.floor(Math.random() * wordPositions.length)];
     
+    // 25% chance of adding feedback
+    if (Math.random() > 0.75) {
+      setIsLoadingFeedback(false);
+      return;
+    }
+
     // Randomly select feedback type
     const feedbackTypes: FeedbackType[] = ['spelling', 'grammar', 'fluency'];
     const randomType = feedbackTypes[Math.floor(Math.random() * feedbackTypes.length)];
@@ -223,9 +202,11 @@ const TextEditor = () => {
     setIsLoadingFeedback(false);
   }, [feedbacks]);
 
-  // Create debounced and throttled version of getFeedback
-  const debouncedGetFeedback = useCallback(
-    debounceAndThrottle(getFeedback, 500, 1000), // 1s debounce, 3s throttle
+  const throttledGetFeedback = useCallback(
+    // The lodash throttle function will by default call `getFeedback`
+    // additionally on the trailing edge (i.e. after the last action) which is
+    // what we want
+    throttle(getFeedback, 500, {leading: false}),
     [getFeedback]
   );
 
@@ -444,7 +425,7 @@ const TextEditor = () => {
       setEditorState(finalEditorState);
       
       // Trigger debounced feedback generation
-      debouncedGetFeedback(finalEditorState);
+      throttledGetFeedback(finalEditorState, updatedFeedbacks);
     } else {
       setEditorState(newEditorState);
     }
