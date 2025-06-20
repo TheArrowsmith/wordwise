@@ -18,8 +18,9 @@ let spellChecker: ReturnType<typeof nspell> | null = null;
 async function initializeSpellChecker() {
   if (!spellChecker) {
     try {
-      // Load dictionary files directly from node_modules
-      const dictionaryPath = join(process.cwd(), 'node_modules', 'dictionary-en-us');
+      // Load dictionary files from the project's assets directory instead of node_modules.
+      // This ensures the files are included in the Vercel deployment bundle.
+      const dictionaryPath = join(process.cwd(), 'src', 'assets', 'dictionaries');
       const aff = readFileSync(join(dictionaryPath, 'index.aff'));
       const dic = readFileSync(join(dictionaryPath, 'index.dic'));
       
