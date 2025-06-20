@@ -24,7 +24,7 @@ interface WritingEditorProps {
 }
 
 export function WritingEditor({ initialContent, onContentChange }: WritingEditorProps) {
-  const { suggestions, analyzText, setHoveredSuggestion } = useSuggestions();
+  const { suggestions, analyzText, setHoveredSuggestion, setSuggestions } = useSuggestions();
   const debounceRef = useRef<NodeJS.Timeout | undefined>(undefined);
   const [isContentLoaded, setIsContentLoaded] = useState(false);
   const [wordCount, setWordCount] = useState(0);
@@ -55,6 +55,9 @@ export function WritingEditor({ initialContent, onContentChange }: WritingEditor
       },
     },
     onUpdate: ({ editor }) => {
+      // Clear existing suggestions immediately on any change.
+      setSuggestions([]);
+
       const documentJSON = editor.getJSON();
       const text = editor.getText();
       
