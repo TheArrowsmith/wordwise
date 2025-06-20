@@ -2,14 +2,23 @@ Document Management System
 
 - [x] Create "My Documents" page with navigation
 - [x] Display documents in a table format with columns:
-  -  Title (first 50 characters of content)
-  -  CEFR Level (taken from the document's prompt)
-  -  Creation Date
-- [x] Implement sortable columns functionality
-- [x] Handle JSON content format from text editor - extract actual text for display and sorting
+  - Title (first 50 characters of content)
+  - CEFR Level (taken from the document's prompt)
+  - Created (date and time)
+  - Updated (date and time)
+- [x] Implement sortable columns functionality for all columns
+- [x] Default sorting: Updated date, most recent first
+- [x] Handle both Tiptap JSON format (current) and Draft.js format (legacy) for content extraction
+- [x] Extract actual text from editor JSON structure for title display and sorting
 - [x] Add click handler to load document in editor
 - [x] Navigate to editor with document ID as URL parameter (/editor?id=uuid)
 - [x] Load associated prompt when opening existing document
 - [x] Ensure documents are filtered by current user (user_id)
-- [x] Handle empty states (no documents)
-- [x] Show button to add new document
+- [x] Handle empty states (no documents) with call-to-action
+- [x] Show "Add New Document" button in header
+- [x] Display dates with full date and time formatting (not just date)
+- [x] Proper Supabase join handling for prompts table
+- [x] Handle both array and object responses from Supabase joins
+- [x] Visual sorting indicators (up/down arrows) for active sort column
+- [x] Hover effects on table rows and sortable headers
+- [x] Responsive table design with horizontal scrolling if needed

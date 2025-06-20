@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 import { DocumentWithPromptPartial, User, EditorBlock, CEFRLevel } from '@/types';
 
-type SortField = 'title' | 'cefr_level' | 'created_at';
+type SortField = 'title' | 'cefr_level' | 'created_at' | 'updated_at';
 type SortDirection = 'asc' | 'desc';
 
 // Type for the Supabase query response
@@ -24,7 +24,7 @@ type DocumentQueryResult = {
 export default function DocumentsPage() {
   const [documents, setDocuments] = useState<DocumentWithPromptPartial[]>([]);
   const [loading, setLoading] = useState(true);
-  const [sortField, setSortField] = useState<SortField>('created_at');
+  const [sortField, setSortField] = useState<SortField>('updated_at');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [user, setUser] = useState<User | null>(null);
 
@@ -69,7 +69,7 @@ export default function DocumentsPage() {
         created_at: doc.created_at,
         updated_at: doc.updated_at,
         prompt_id: doc.prompt_id,
-        prompts: Array.isArray(doc.prompts) && doc.prompts.length > 0 ? doc.prompts[0] : null
+        prompts: Array.isArray(doc.prompts) ? (doc.prompts.length > 0 ? doc.prompts[0] : null) : doc.prompts
       }));
       setDocuments(transformedData);
     }
@@ -100,6 +100,26 @@ export default function DocumentsPage() {
   const extractTextFromEditorContent = (content: string) => {
     try {
       const parsed = JSON.parse(content);
+      
+      // Handle Tiptap JSON format
+      if (parsed.type === 'doc' && parsed.content) {
+        let text = '';
+        const traverse = (node: { type?: string; text?: string; content?: any[] }) => {
+          if (node.type === 'text' && node.text) {
+            text += node.text;
+          } else if (node.content) {
+            node.content.forEach(traverse);
+          }
+          if (node.type === 'paragraph' || node.type === 'heading') {
+            text += ' ';
+          }
+        };
+        
+        parsed.content.forEach(traverse);
+        return text.trim();
+      }
+      
+      // Fallback for old Draft.js format
       const blocks = parsed.blocks || [];
       const text = blocks.map((block: EditorBlock) => block.text || '').join(' ').trim();
       return text;
@@ -118,6 +138,10 @@ export default function DocumentsPage() {
     return new Date(dateString).toLocaleDateString();
   };
 
+  const formatDateTime = (dateString: string) => {
+    return new Date(dateString).toLocaleString();
+  };
+
   const sortedDocuments = [...documents].sort((a, b) => {
     let aValue, bValue;
     
@@ -133,6 +157,10 @@ export default function DocumentsPage() {
       case 'created_at':
         aValue = new Date(a.created_at).getTime();
         bValue = new Date(b.created_at).getTime();
+        break;
+      case 'updated_at':
+        aValue = new Date(a.updated_at).getTime();
+        bValue = new Date(b.updated_at).getTime();
         break;
       default:
         return 0;
@@ -206,8 +234,17 @@ export default function DocumentsPage() {
                           onClick={() => handleSort('created_at')}
                         >
                           <div className="flex items-center space-x-1">
-                            <span>Creation Date</span>
+                            <span>Created</span>
                             <SortIcon field="created_at" />
+                          </div>
+                        </th>
+                        <th 
+                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                          onClick={() => handleSort('updated_at')}
+                        >
+                          <div className="flex items-center space-x-1">
+                            <span>Updated</span>
+                            <SortIcon field="updated_at" />
                           </div>
                         </th>
                       </tr>
@@ -230,7 +267,10 @@ export default function DocumentsPage() {
                             </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {formatDate(document.created_at)}
+                            {formatDateTime(document.created_at)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {formatDateTime(document.updated_at)}
                           </td>
                         </tr>
                       ))}
