@@ -27,6 +27,7 @@ export function WritingEditor({ initialContent, onContentChange }: WritingEditor
   const { suggestions, analyzText, setHoveredSuggestion } = useSuggestions();
   const debounceRef = useRef<NodeJS.Timeout | undefined>(undefined);
   const [isContentLoaded, setIsContentLoaded] = useState(false);
+  const [wordCount, setWordCount] = useState(0);
 
   const editor = useEditor({
     extensions: [
@@ -63,6 +64,10 @@ export function WritingEditor({ initialContent, onContentChange }: WritingEditor
     },
     onUpdate: ({ editor }) => {
       const text = editor.getText();
+      
+      // Update word count
+      const words = text.trim().split(/\s+/);
+      setWordCount(text.trim() === '' ? 0 : words.length);
       
       // Clear previous debounce
       if (debounceRef.current) {
@@ -249,11 +254,14 @@ export function WritingEditor({ initialContent, onContentChange }: WritingEditor
       </div>
       
       {/* Editor Content */}
-      <div className="flex-1 p-6 overflow-y-auto">
+      <div className="flex-1 p-6 overflow-y-auto relative">
         <EditorContent 
           editor={editor} 
           className="min-h-full focus-within:outline-none"
         />
+        <div className="absolute bottom-2 right-2 text-sm text-gray-500 bg-white/80 px-2 py-1 rounded-md shadow-sm">
+          {wordCount} {wordCount === 1 ? 'word' : 'words'}
+        </div>
       </div>
     </div>
   );
