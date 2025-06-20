@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
       .use(retextPassive)
       .use(retextReadability, { age: 18 });
 
-    const traverse = async (node: any, position: number): Promise<number> => {
+    const traverse = async (node: { type?: string; text?: string; content?: unknown[] }, position: number): Promise<number> => {
       if (node.type === 'text') {
         const text = node.text || '';
         
@@ -147,7 +147,7 @@ export async function POST(request: NextRequest) {
       if (node.content && Array.isArray(node.content)) {
         let childPosition = position + openingTagSize;
         for (const childNode of node.content) {
-          const childSize = await traverse(childNode, childPosition);
+          const childSize = await traverse(childNode as { type?: string; text?: string; content?: unknown[] }, childPosition);
           contentSize += childSize;
           childPosition += childSize;
         }
@@ -156,7 +156,7 @@ export async function POST(request: NextRequest) {
       const isBlockNode = [
           'doc', 'paragraph', 'heading', 'blockquote', 
           'bulletList', 'orderedList', 'listItem'
-      ].includes(node.type);
+      ].includes(node.type || '');
 
       if (isBlockNode) {
         return openingTagSize + contentSize + 1;
@@ -170,7 +170,7 @@ export async function POST(request: NextRequest) {
     let currentPosition = 0;
     if (document.content && Array.isArray(document.content)) {
         for (const topLevelNode of document.content) {
-            const nodeSize = await traverse(topLevelNode, currentPosition);
+            const nodeSize = await traverse(topLevelNode as { type?: string; text?: string; content?: unknown[] }, currentPosition);
             currentPosition += nodeSize;
         }
     }

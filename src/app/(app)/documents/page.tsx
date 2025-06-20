@@ -104,11 +104,11 @@ export default function DocumentsPage() {
       // Handle Tiptap JSON format
       if (parsed.type === 'doc' && parsed.content) {
         let text = '';
-        const traverse = (node: { type?: string; text?: string; content?: any[] }) => {
+        const traverse = (node: { type?: string; text?: string; content?: unknown[] }) => {
           if (node.type === 'text' && node.text) {
             text += node.text;
           } else if (node.content) {
-            node.content.forEach(traverse);
+            node.content.forEach((child) => traverse(child as { type?: string; text?: string; content?: unknown[] }));
           }
           if (node.type === 'paragraph' || node.type === 'heading') {
             text += ' ';
@@ -134,9 +134,7 @@ export default function DocumentsPage() {
     return text.slice(0, 50) + (text.length > 50 ? '...' : '');
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString();
-  };
+
 
   const formatDateTime = (dateString: string) => {
     return new Date(dateString).toLocaleString();

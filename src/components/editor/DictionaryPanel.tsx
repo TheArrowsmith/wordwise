@@ -193,7 +193,7 @@ export function DictionaryPanel({ nativeLanguage }: DictionaryPanelProps) {
               /* Not Found State */
               <div className="py-4">
                 <p className="text-gray-600 text-sm">
-                  "{inputValue}" not found. Please check the spelling.
+                  &quot;{inputValue}&quot; not found. Please check the spelling.
                 </p>
               </div>
             )}
