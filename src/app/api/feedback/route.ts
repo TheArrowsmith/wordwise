@@ -212,6 +212,7 @@ function findFeedbackInText(text: string): FeedbackItem[] {
   for (const pattern of allPatterns) {
     const regex = new RegExp(pattern.pattern.source, pattern.pattern.flags);
     
+    
     let execResult;
     while ((execResult = regex.exec(text)) !== null) {
       const matchText = execResult[0];

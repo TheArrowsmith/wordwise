@@ -88,6 +88,17 @@ export interface Feedback {
   created_at: string;
 }
 
+export interface GradingSubmission {
+  id: string;
+  document_id: string;
+  user_id: string;
+  created_at: string;
+  grade: string | null;
+  feedback_text: string | null;
+  cefr_level_at_submission: string;
+  status: 'processing' | 'complete' | 'failed';
+}
+
 // Extended types for joins and relationships
 export interface DocumentWithPrompt extends Document {
   prompts?: Prompt | null;

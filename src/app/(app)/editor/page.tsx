@@ -5,7 +5,7 @@ import { useDebounce } from 'use-debounce';
 import { ArrowPathIcon } from '@heroicons/react/24/outline';
 import { supabase } from '@/lib/supabase';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { Document, Prompt, Profile, User } from '@/types';
+import { Document, Prompt, Profile, User, GradingSubmission } from '@/types';
 import { SuggestionProvider } from '@/contexts/SuggestionContext';
 import { WritingEditor } from '@/components/editor/WritingEditor';
 import { SuggestionPanel } from '@/components/editor/SuggestionPanel';
@@ -35,9 +35,11 @@ export default function EditorPage() {
   const [, setSaveStatus] = useState<'saved' | 'saving' | 'idle'>('idle');
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [submissions, setSubmissions] = useState<GradingSubmission[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   const searchParams = useSearchParams();
-  useRouter(); // Used for potential future navigation
+  const router = useRouter();
   const documentId = searchParams.get('id');
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastSaveRef = useRef<number>(0);
@@ -170,6 +172,108 @@ export default function EditorPage() {
     }
   }, [user, prompt, editorContent, currentDocument]);
 
+  // Load submissions for the current document
+  const loadSubmissions = useCallback(async () => {
+    if (!currentDocument) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('grading_submissions')
+        .select('*')
+        .eq('document_id', currentDocument.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      if (data) {
+        setSubmissions(data);
+      }
+    } catch (error) {
+      console.error('Error loading submissions:', error);
+    }
+  }, [currentDocument]);
+
+  // Extract text content from editor JSON
+  const extractTextFromEditor = (editorContent: object): string => {
+    const content = editorContent as { content?: object[] };
+    if (!content || !content.content) return '';
+    
+    let text = '';
+    const traverse = (node: { type?: string; text?: string; content?: object[] }) => {
+      if (node.type === 'text' && node.text) {
+        text += node.text;
+      } else if (node.content) {
+        node.content.forEach(traverse);
+      }
+      if (node.type === 'paragraph' || node.type === 'heading') {
+        text += '\n';
+      }
+    };
+    
+    content.content.forEach(traverse);
+    return text.trim();
+  };
+
+  // Handle submission for grading
+  const handleSubmitForGrading = async () => {
+    if (!currentDocument || !prompt || !profile || !editorContent) return;
+
+    setIsSubmitting(true);
+    
+    try {
+      // Extract text content from the editor
+      const documentContent = extractTextFromEditor(editorContent);
+      
+      if (!documentContent.trim()) {
+        alert('Please write some content before submitting for grading.');
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Get auth token
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        alert('Please sign in to submit for grading.');
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Make API call to grade-writing endpoint
+      const response = await fetch('/api/grade-writing', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          documentContent,
+          promptText: prompt.text,
+          cefrLevel: profile.cefr_level,
+          documentId: currentDocument.id,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to submit for grading');
+      }
+
+      // Get the submission ID from the response
+      const data = await response.json();
+      if (data.submissionId) {
+        // Navigate to feedback page
+        router.push(`/feedback/${data.submissionId}`);
+      } else {
+        throw new Error('No submission ID received');
+      }
+      
+    } catch (error) {
+      console.error('Error submitting for grading:', error);
+      alert('Failed to submit for grading. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   // Get user and profile
   useEffect(() => {
     const getUser = async () => {
@@ -200,6 +304,13 @@ export default function EditorPage() {
     }
   }, [user, profile, documentId, loadDocument, loadRandomPrompt]);
 
+  // Load submissions when document changes
+  useEffect(() => {
+    if (currentDocument) {
+      loadSubmissions();
+    }
+  }, [currentDocument, loadSubmissions]);
+
   // Auto-save effect
   const debouncedEditorContent = useDebounce(editorContent, 2000)[0];
   useEffect(() => {
@@ -214,8 +325,6 @@ export default function EditorPage() {
     setPromptLoading(true);
     loadRandomPrompt();
   };
-
-
 
   return (
     <SuggestionProvider>
@@ -261,6 +370,68 @@ export default function EditorPage() {
                     initialContent={initialContent}
                     onContentChange={handleContentChange}
                   />
+
+                  {/* Submit for Grading Button */}
+                  {currentDocument && (
+                    <div className="bg-white rounded-lg shadow-sm p-6">
+                      <button
+                        onClick={handleSubmitForGrading}
+                        disabled={isSubmitting || !editorContent}
+                        className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-medium py-3 px-4 rounded-md transition-colors flex items-center justify-center"
+                      >
+                        {isSubmitting ? (
+                          <>
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                            Submitting for Grading...
+                          </>
+                        ) : (
+                          'Submit for Grading'
+                        )}
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Submission History */}
+                  {submissions.length > 0 && (
+                    <div className="bg-white rounded-lg shadow-sm p-6">
+                      <h3 className="text-lg font-medium text-gray-900 mb-4">Grading History</h3>
+                      <div className="space-y-3">
+                        {submissions.map((submission) => (
+                          <div
+                            key={submission.id}
+                            className="flex items-center justify-between p-3 bg-gray-50 rounded-md hover:bg-gray-100 transition-colors cursor-pointer"
+                            onClick={() => router.push(`/feedback/${submission.id}`)}
+                          >
+                            <div className="flex items-center space-x-3">
+                              <div className={`text-lg font-bold ${
+                                submission.grade === 'A' ? 'text-green-600' :
+                                submission.grade === 'B' ? 'text-blue-600' :
+                                submission.grade === 'C' ? 'text-yellow-600' :
+                                submission.grade === 'D' ? 'text-orange-600' :
+                                submission.grade === 'F' ? 'text-red-600' :
+                                'text-gray-500'
+                              }`}>
+                                {submission.grade || (submission.status === 'processing' ? '...' : '?')}
+                              </div>
+                              <div>
+                                <p className="text-sm font-medium text-gray-900">
+                                  Grade: {submission.grade || (submission.status === 'processing' ? 'Processing...' : 'Failed')}
+                                </p>
+                                <p className="text-xs text-gray-500">
+                                  Submitted on {new Date(submission.created_at).toLocaleDateString()}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="text-gray-400">
+                              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                              </svg>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Feedback Panel Column */}
