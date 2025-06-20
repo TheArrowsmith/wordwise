@@ -15,15 +15,15 @@ import { SuggestionTooltip } from '@/components/editor/SuggestionTooltip';
 import 'placeholder-loading/dist/css/placeholder-loading.min.css';
 import React from 'react';
 
-interface FeedbackSuggestion {
-  id: string;
-  category: 'spelling' | 'grammar' | 'fluency' | 'clarity';
-  message: string;
-  explanation: string;
-  suggested_fix?: string;
-  offset: number;
-  length: number;
-}
+// interface FeedbackSuggestion {
+//   id: string;
+//   category: 'spelling' | 'grammar' | 'fluency' | 'clarity';
+//   message: string;
+//   explanation: string;
+//   suggested_fix?: string;
+//   offset: number;
+//   length: number;
+// }
 
 export default function EditorPage() {
   const [initialContent, setInitialContent] = useState<string | null>(null);
@@ -36,19 +36,12 @@ export default function EditorPage() {
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'idle'>('idle');
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
-  const [feedbackSuggestions, setFeedbackSuggestions] = useState<FeedbackSuggestion[]>([]);
   
   const searchParams = useSearchParams();
   const router = useRouter();
   const documentId = searchParams.get('id');
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastSaveRef = useRef<number>(0);
-
-  // Get current content as plain text
-  const getCurrentText = useCallback(() => {
-    if (!editorContent) return '';
-    return JSON.stringify(editorContent);
-  }, [editorContent]);
 
   const handleContentChange = useCallback((content: object) => {
     setEditorContent(content);
