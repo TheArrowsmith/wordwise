@@ -226,7 +226,14 @@ export default function EditorPage() {
                   {/* Prompt Section */}
                   <div className="bg-white rounded-lg shadow-sm p-6">
                     <div className="flex justify-between items-start mb-4">
-                      <h2 className="text-lg font-medium text-gray-900">Prompt</h2>
+                      <div className="flex items-center gap-2">
+                        <h2 className="text-lg font-medium text-gray-900">Prompt</h2>
+                        {profile?.cefr_level && (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            {profile.cefr_level.toUpperCase()}
+                          </span>
+                        )}
+                      </div>
                       <button
                         onClick={refreshPrompt}
                         disabled={promptLoading}
