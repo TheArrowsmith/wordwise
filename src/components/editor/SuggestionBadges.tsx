@@ -20,12 +20,6 @@ export function SuggestionBadges() {
 
   return (
     <div className="flex items-center space-x-2">
-      {isLoading && (
-        <div className="flex items-center space-x-1 text-sm text-gray-500">
-          <div className="animate-spin h-3 w-3 border border-gray-300 rounded-full border-t-transparent"></div>
-          <span>Analyzing...</span>
-        </div>
-      )}
       {badges.map(({ type, count }) => (
         <div
           key={type}

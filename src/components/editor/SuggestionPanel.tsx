@@ -19,7 +19,7 @@ const SUGGESTION_ICONS = {
 };
 
 export function SuggestionPanel() {
-  const { suggestions, hoveredSuggestion, setHoveredSuggestion } = useSuggestions();
+  const { suggestions, hoveredSuggestion, setHoveredSuggestion, isLoading } = useSuggestions();
   const [showAll, setShowAll] = useState(false);
   
   // Apply progressive disclosure limits
@@ -43,9 +43,14 @@ export function SuggestionPanel() {
   return (
     <div className="w-80 bg-white border-l border-gray-200 flex flex-col">
       <div className="p-4 border-b border-gray-200">
-        <h2 className="text-lg font-semibold text-gray-900">
-          Writing Suggestions
-        </h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-gray-900">
+            Feedback
+          </h2>
+          {isLoading && (
+            <div className="animate-spin h-4 w-4 border border-gray-300 rounded-full border-t-transparent"></div>
+          )}
+        </div>
         <p className="text-sm text-gray-500 mt-1">
           {suggestions.length} suggestion{suggestions.length !== 1 ? 's' : ''} found
         </p>
