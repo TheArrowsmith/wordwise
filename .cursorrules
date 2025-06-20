@@ -3,3 +3,5 @@ Ensure that all text is readable: use dark text on light backgrounds or light te
 Typescript types should generally go in `src/types.ts`, unless they are very specific to the particular file that uses them. Before adding a new type, check to see that the type you need doesn't already exist in `src/types.ts`.
 
 You can assume that a Next server is already running on localhost:3000. If you need to test changes against the server, don't run `npm run dev` - instead check what's happening on localhost:3000, which should have already autoreloaded with your changes.
+
+Don't worry about linter errors or typescript warnings unless I explicitly tell you to fix them. When implementing a feature, just get the code to compile and work. Pedantic things like linter errors can be fixed later.

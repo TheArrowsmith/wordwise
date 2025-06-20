@@ -44,43 +44,15 @@ interface Suggestion {
 
 export async function POST(request: NextRequest) {
   try {
-    const { text } = await request.json();
-    
-    if (!text || typeof text !== 'string') {
-      return NextResponse.json({ error: 'Text is required' }, { status: 400 });
+    const { document } = await request.json();
+
+    if (!document || typeof document !== 'object' || !document.type) {
+      return NextResponse.json({ error: 'Invalid document format' }, { status: 400 });
     }
 
     const suggestions: Suggestion[] = [];
-    
-    // Initialize spell checker and check spelling
-    try {
-      const spell = await initializeSpellChecker();
-      
-      // Check spelling with nspell
-      const words = text.match(/\b[A-Za-z]+\b/g) || [];
-      
-      for (const word of words) {
-        if (!spell.correct(word)) {
-          const wordIndex = text.indexOf(word);
-          const alternatives = spell.suggest(word).slice(0, 5);
-          
-          suggestions.push({
-            id: `spell-${wordIndex}-${word}`,
-            type: 'spelling',
-            position: { start: wordIndex, end: wordIndex + word.length },
-            text: word,
-            message: `"${word}" may be misspelled`,
-            suggestions: alternatives,
-            ruleId: 'spelling'
-          });
-        }
-      }
-    } catch (error) {
-      console.error('Spell checking failed, skipping spelling analysis:', error);
-      // Continue without spelling suggestions
-    }
+    const spell = await initializeSpellChecker();
 
-    // Process with retext plugins (without spell check since we handle it separately)
     const processor = retext()
       .use(retextRepeatedWords)
       .use(retextSimplify)
@@ -88,72 +60,124 @@ export async function POST(request: NextRequest) {
       .use(retextPassive)
       .use(retextReadability, { age: 18 });
 
-    const file = await processor.process(text);
-    
-    // Process retext messages
-    file.messages.forEach((message) => {
-      // Check if message has position information
-      if (!message.place || typeof message.place !== 'object') {
-        return;
-      }
-      
-      // Handle both Point and Position types
-      let start: number | undefined;
-      let end: number | undefined;
-      
-      if ('start' in message.place && 'end' in message.place) {
-        // Position type
-        start = message.place.start?.offset;
-        end = message.place.end?.offset;
-      } else if ('offset' in message.place) {
-        // Point type - use same offset for start and end
-        start = message.place.offset;
-        end = message.place.offset;
-      }
-      
-      // Skip messages without proper position information
-      if (start === undefined || end === undefined) {
-        return;
-      }
-      
-      const messageText = text.slice(start, end);
-      
-      let type: 'grammar' | 'style' | 'readability' = 'grammar';
-      
-      // Categorize based on rule source
-      if (message.source === 'retext-simplify' || message.source === 'retext-intensify') {
-        type = 'style';
-      } else if (message.source === 'retext-passive' || message.source === 'retext-readability') {
-        type = 'readability';
-      }
-      
-      // Skip if already have spelling suggestion for this position
-      const hasSpellingSuggestion = suggestions.some(s => 
-        s.type === 'spelling' && 
-        s.position.start <= start && 
-        s.position.end >= end
-      );
-      
-      if (!hasSpellingSuggestion && messageText.trim()) {
-        // Generate unique ID using timestamp and random number to avoid duplicates
-        const uniqueId = `${type}-${start}-${end}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const traverse = async (node: any, position: number): Promise<number> => {
+      if (node.type === 'text') {
+        const text = node.text || '';
         
-        suggestions.push({
-          id: uniqueId,
-          type,
-          position: { start, end },
-          text: messageText,
-          message: message.reason || message.message || 'Writing suggestion',
-          suggestions: message.expected || [],
-          ruleId: message.ruleId || message.source
-        });
-      }
-    });
+        if (text) {
+          // Nspell (Spelling) Analysis
+          const words = text.match(/\b[A-Za-z]+\b/g) || [];
+          for (const word of words) {
+            if (!spell.correct(word)) {
+              let match;
+              const regex = new RegExp(`\\b${word}\\b`, 'g');
+              while ((match = regex.exec(text)) !== null) {
+                const wordStartIndex = match.index;
+                const absoluteStart = position + wordStartIndex;
+                suggestions.push({
+                  // FIX: More stable unique key
+                  id: `spell-${absoluteStart}-${word}-${match.index}`,
+                  type: 'spelling',
+                  position: { start: absoluteStart, end: absoluteStart + word.length },
+                  text: word,
+                  message: `"${word}" may be misspelled.`,
+                  suggestions: spell.suggest(word).slice(0, 5),
+                  ruleId: 'spelling'
+                });
+              }
+            }
+          }
+  
+          // Retext (Grammar/Style) Analysis
+          const file = await processor.process(text);
+          file.messages.forEach((message) => {
+            if (!message.place || typeof message.place !== 'object') return;
+            
+            // Handle both Point and Position types
+            let startOffset: number | undefined;
+            let endOffset: number | undefined;
+            
+            if ('start' in message.place && 'end' in message.place) {
+              // Position type
+              startOffset = message.place.start?.offset;
+              endOffset = message.place.end?.offset;
+            } else if ('offset' in message.place) {
+              // Point type - use same offset for start and end
+              startOffset = message.place.offset;
+              endOffset = message.place.offset;
+            }
+            
+            if (startOffset === undefined || endOffset === undefined) return;
 
-    // Sort suggestions by position and apply limits
+            const start = position + startOffset;
+            const end = position + endOffset;
+            const messageText = text.slice(startOffset, endOffset);
+
+            if (!messageText.trim()) return;
+
+            let type: 'grammar' | 'style' | 'readability' = 'grammar';
+            if (message.source === 'retext-simplify' || message.source === 'retext-intensify') {
+              type = 'style';
+            } else if (message.source === 'retext-passive' || message.source === 'retext-readability') {
+              type = 'readability';
+            }
+            
+            const hasSpellingSuggestion = suggestions.some(s => s.type === 'spelling' && s.position.start <= start && s.position.end >= end);
+            if (hasSpellingSuggestion) return;
+            
+            suggestions.push({
+              // FIX: Stable unique key using ruleId, no Math.random()
+              id: `${type}-${start}-${end}-${message.ruleId || message.source}`,
+              type,
+              position: { start, end },
+              text: messageText,
+              message: message.reason || 'Writing suggestion',
+              suggestions: message.expected || [],
+              ruleId: String(message.source),
+            });
+          });
+        }
+        
+        return text.length;
+      }
+
+      const openingTagSize = 1;
+      let contentSize = 0;
+
+      if (node.content && Array.isArray(node.content)) {
+        let childPosition = position + openingTagSize;
+        for (const childNode of node.content) {
+          const childSize = await traverse(childNode, childPosition);
+          contentSize += childSize;
+          childPosition += childSize;
+        }
+      }
+      
+      const isBlockNode = [
+          'doc', 'paragraph', 'heading', 'blockquote', 
+          'bulletList', 'orderedList', 'listItem'
+      ].includes(node.type);
+
+      if (isBlockNode) {
+        return openingTagSize + contentSize + 1;
+      } else {
+        return openingTagSize;
+      }
+    };
+
+    // FIX: The traversal now starts on the children of the doc node at position 0,
+    // which corrects the consistent +1 offset error.
+    let currentPosition = 0;
+    if (document.content && Array.isArray(document.content)) {
+        for (const topLevelNode of document.content) {
+            const nodeSize = await traverse(topLevelNode, currentPosition);
+            currentPosition += nodeSize;
+        }
+    }
+
+    // Sort and limit suggestions
     const sortedSuggestions = suggestions.sort((a, b) => a.position.start - b.position.start);
     
-    // Apply progressive disclosure limits
     const spelling = sortedSuggestions.filter(s => s.type === 'spelling');
     const grammar = sortedSuggestions.filter(s => s.type === 'grammar').slice(0, 15);
     const style = sortedSuggestions.filter(s => s.type === 'style').slice(0, 15);
@@ -164,7 +188,7 @@ export async function POST(request: NextRequest) {
       .slice(0, 50);
 
     return NextResponse.json({ suggestions: limitedSuggestions });
-    
+
   } catch (error) {
     console.error('Text analysis error:', error);
     return NextResponse.json({ 

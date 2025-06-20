@@ -55,6 +55,7 @@ export function WritingEditor({ initialContent, onContentChange }: WritingEditor
       },
     },
     onUpdate: ({ editor }) => {
+      const documentJSON = editor.getJSON();
       const text = editor.getText();
       
       // Update word count
@@ -68,7 +69,7 @@ export function WritingEditor({ initialContent, onContentChange }: WritingEditor
       
       // Debounce analysis by 300ms
       debounceRef.current = setTimeout(() => {
-        analyzText(text);
+        analyzText(documentJSON);
       }, 300);
 
       // Notify parent of content changes

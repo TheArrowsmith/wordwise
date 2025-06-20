@@ -11,7 +11,7 @@ interface SuggestionContextType {
   setSuggestions: (suggestions: Suggestion[]) => void;
   setIsLoading: (loading: boolean) => void;
   setHoveredSuggestion: (id: string | null) => void;
-  analyzText: (text: string) => Promise<void>;
+  analyzText: (document: object) => Promise<void>;
   cancelAnalysis: () => void;
 }
 
@@ -37,8 +37,8 @@ export function SuggestionProvider({ children }: { children: React.ReactNode }) 
     }
   }, []);
 
-  const analyzText = useCallback(async (text: string) => {
-    if (!text.trim()) {
+  const analyzText = useCallback(async (document: object) => {
+    if (!document || Object.keys(document).length === 0) {
       setSuggestions([]);
       return;
     }
@@ -57,7 +57,7 @@ export function SuggestionProvider({ children }: { children: React.ReactNode }) 
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ text }),
+        body: JSON.stringify({ document }),
         signal: abortControllerRef.current.signal,
       });
 
