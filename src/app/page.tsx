@@ -16,8 +16,8 @@ export default function Home() {
 
   useEffect(() => {
     const checkUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
+          const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
         redirect('/editor');
       } else {
         setUser(null);

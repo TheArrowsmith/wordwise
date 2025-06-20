@@ -10,6 +10,7 @@ import { SuggestionProvider } from '@/contexts/SuggestionContext';
 import { WritingEditor } from '@/components/editor/WritingEditor';
 import { SuggestionPanel } from '@/components/editor/SuggestionPanel';
 import { SuggestionTooltip } from '@/components/editor/SuggestionTooltip';
+import { DictionaryPanel } from '@/components/editor/DictionaryPanel';
 import 'placeholder-loading/dist/css/placeholder-loading.min.css';
 import React from 'react';
 
@@ -30,13 +31,13 @@ export default function EditorPage() {
   const [promptLoading, setPromptLoading] = useState(true);
   const [currentDocument, setCurrentDocument] = useState<Document | null>(null);
   const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<Pick<Profile, 'cefr_level'> | null>(null);
-  const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'idle'>('idle');
+  const [profile, setProfile] = useState<Pick<Profile, 'cefr_level' | 'native_language'> | null>(null);
+  const [, setSaveStatus] = useState<'saved' | 'saving' | 'idle'>('idle');
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   
   const searchParams = useSearchParams();
-  const router = useRouter();
+  useRouter(); // Used for potential future navigation
   const documentId = searchParams.get('id');
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastSaveRef = useRef<number>(0);
@@ -177,7 +178,7 @@ export default function EditorPage() {
         setUser(user);
         const { data: profile } = await supabase
           .from('profiles')
-          .select('cefr_level')
+          .select('cefr_level, native_language')
           .eq('id', user.id)
           .single();
         if (profile) {
@@ -263,7 +264,8 @@ export default function EditorPage() {
                 </div>
 
                 {/* Feedback Panel Column */}
-                <div className="lg:w-1/3">
+                <div className="flex flex-col space-y-6">
+                  <DictionaryPanel nativeLanguage={profile?.native_language || undefined} />
                   <SuggestionPanel />
                 </div>
               </div>
