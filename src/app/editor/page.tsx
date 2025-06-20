@@ -252,7 +252,7 @@ export default function EditorPage() {
                   {/* Prompt Section */}
                   <div className="bg-white rounded-lg shadow-sm p-6">
                     <div className="flex justify-between items-start mb-4">
-                      <h2 className="text-lg font-medium text-gray-900">Writing Prompt</h2>
+                      <h2 className="text-lg font-medium text-gray-900">Prompt</h2>
                       <button
                         onClick={refreshPrompt}
                         disabled={promptLoading}
@@ -261,19 +261,17 @@ export default function EditorPage() {
                         <ArrowPathIcon className={`h-5 w-5 ${promptLoading ? 'animate-spin' : ''}`} />
                       </button>
                     </div>
-                    {promptLoading ? (
-                      <div className="ph-item">
-                        <div className="ph-col-12">
+                    <div className="align-top">
+                      {promptLoading ? (
+                        <div className="ph-col-12 h-6 mt-2">
                           <div className="ph-row">
-                            <div className="ph-col-10"></div>
-                            <div className="ph-col-8"></div>
-                            <div className="ph-col-6"></div>
+                            <div className="ph-col-8 rounded"></div>
                           </div>
                         </div>
-                      </div>
-                    ) : (
-                      <p className="text-gray-800">{prompt?.text}</p>
-                    )}
+                      ) : (
+                        <p className="text-gray-800">{prompt?.text}</p>
+                      )}
+                    </div>
                   </div>
 
                   {/* Editor */}

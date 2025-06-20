@@ -155,8 +155,7 @@ export function WritingEditor({ initialContent, onContentChange }: WritingEditor
     <div className="flex-1 flex flex-col bg-white">
       {/* Editor Header */}
       <div className="border-b border-gray-200 p-4">
-        <div className="flex items-center justify-between mb-4">
-          <h1 className="text-2xl font-bold text-gray-900">Writing Assistant</h1>
+        <div className="flex items-center justify-end mb-4">
           <SuggestionBadges />
         </div>
         
