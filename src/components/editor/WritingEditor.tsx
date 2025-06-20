@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import TextStyle from '@tiptap/extension-text-style';
@@ -18,9 +18,15 @@ import {
   NumberedListIcon
 } from '@heroicons/react/24/outline';
 
-export function WritingEditor() {
+interface WritingEditorProps {
+  initialContent?: string | object | null;
+  onContentChange?: (content: object) => void;
+}
+
+export function WritingEditor({ initialContent, onContentChange }: WritingEditorProps) {
   const { suggestions, analyzText, setHoveredSuggestion } = useSuggestions();
   const debounceRef = useRef<NodeJS.Timeout | undefined>(undefined);
+  const [isContentLoaded, setIsContentLoaded] = useState(false);
 
   const editor = useEditor({
     extensions: [
@@ -67,8 +73,31 @@ export function WritingEditor() {
       debounceRef.current = setTimeout(() => {
         analyzText(text);
       }, 300);
+
+      // Notify parent of content changes
+      if (onContentChange) {
+        onContentChange(editor.getJSON());
+      }
     },
   });
+
+  // Handle initial content
+  useEffect(() => {
+    if (editor && initialContent && !isContentLoaded) {
+      let contentToSet;
+      if (typeof initialContent === 'string') {
+        try {
+          contentToSet = JSON.parse(initialContent); // Handle stringified JSON
+        } catch {
+          contentToSet = `<p>${initialContent}</p>`; // Fallback for plain text
+        }
+      } else {
+        contentToSet = initialContent; // Handle Tiptap JSON object
+      }
+      editor.commands.setContent(contentToSet, false);
+      setIsContentLoaded(true);
+    }
+  }, [editor, initialContent, isContentLoaded]);
 
   // Update suggestions in editor when they change
   useEffect(() => {
