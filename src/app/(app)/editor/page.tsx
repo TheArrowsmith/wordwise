@@ -4,8 +4,6 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useDebounce } from 'use-debounce';
 import { ArrowPathIcon } from '@heroicons/react/24/outline';
 import { supabase } from '@/lib/supabase';
-import ProtectedRoute from '@/components/ProtectedRoute';
-import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Document, Prompt, Profile, User } from '@/types';
 import { SuggestionProvider } from '@/contexts/SuggestionContext';
@@ -216,44 +214,11 @@ export default function EditorPage() {
     loadRandomPrompt();
   };
 
-  const handleSignOut = async () => {
-    try {
-      await supabase.auth.signOut();
-      router.push('/auth/signin');
-    } catch (error) {
-      console.error('Error signing out:', error);
-    }
-  };
+
 
   return (
-    <ProtectedRoute>
-      <SuggestionProvider>
-        <div className="min-h-screen bg-gray-100">
-          <nav className="bg-white shadow-sm">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="flex justify-between h-16">
-                <div className="flex">
-                  <Link href="/" className="flex items-center">
-                    <span className="text-xl font-semibold text-gray-900">WordWise</span>
-                  </Link>
-                </div>
-                <div className="flex items-center space-x-4">
-                  <div className="text-sm text-gray-500">
-                    {saveStatus === 'saving' && 'Saving...'}
-                    {saveStatus === 'saved' && 'Saved'}
-                  </div>
-                  <button
-                    onClick={handleSignOut}
-                    className="text-sm text-gray-600 hover:text-gray-900 font-medium"
-                  >
-                    Sign Out
-                  </button>
-                </div>
-              </div>
-            </div>
-          </nav>
-
-          <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+    <SuggestionProvider>
+      <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
             <SuggestionTooltip>
               <div className="flex flex-col lg:flex-row gap-6">
                 {/* Main Editor and Prompt Column */}
@@ -296,9 +261,7 @@ export default function EditorPage() {
                 </div>
               </div>
             </SuggestionTooltip>
-          </main>
-        </div>
-      </SuggestionProvider>
-    </ProtectedRoute>
+      </div>
+    </SuggestionProvider>
   );
 } 

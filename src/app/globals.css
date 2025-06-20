@@ -24,3 +24,11 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+.ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: #9ca3af;  /* Tailwind's gray-400, providing good contrast on white/light backgrounds */
+  pointer-events: none;
+  height: 0;
+}

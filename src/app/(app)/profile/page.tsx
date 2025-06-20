@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import CEFRSelector from '@/components/CEFRSelector';
 import NativeLanguageSelector from '@/components/NativeLanguageSelector';
-import ProtectedRoute from '@/components/ProtectedRoute';
 
 export default function Profile() {
   const [email, setEmail] = useState('');
@@ -94,8 +93,7 @@ export default function Profile() {
   }
 
   return (
-    <ProtectedRoute>
-      <div className="flex min-h-screen items-center justify-center bg-gray-100 px-4 py-8">
+    <div className="flex min-h-screen items-center justify-center px-4 py-8">
         <div className="w-full max-w-2xl space-y-8 rounded-lg bg-white p-8 shadow-md">
           <div className="text-center">
             <h1 className="text-3xl font-bold text-gray-900">Profile</h1>
@@ -161,7 +159,6 @@ export default function Profile() {
             </div>
           </form>
         </div>
-      </div>
-    </ProtectedRoute>
+    </div>
   );
 } 

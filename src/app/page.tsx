@@ -1,11 +1,39 @@
+'use client';
+
 import Link from "next/link";
 import Image from "next/image";
 import { 
   UserPlusIcon, 
   ArrowRightOnRectangleIcon
 } from "@heroicons/react/24/outline";
+import { useEffect, useState } from 'react';
+import { redirect } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
 
 export default function Home() {
+  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        redirect('/editor');
+      } else {
+        setUser(null);
+        setLoading(false);
+      }
+    };
+    checkUser();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-100">
+        <div className="text-lg text-gray-600">Loading...</div>
+      </div>
+    );
+  }
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-100">
       <div className="flex flex-col items-center gap-6">

@@ -7,6 +7,7 @@ import TextStyle from '@tiptap/extension-text-style';
 import Color from '@tiptap/extension-color';
 import Highlight from '@tiptap/extension-highlight';
 import Underline from '@tiptap/extension-underline';
+import Placeholder from '@tiptap/extension-placeholder';
 import { useSuggestions } from '@/contexts/SuggestionContext';
 import { SuggestionExtension } from './SuggestionExtension';
 import { 
@@ -39,22 +40,14 @@ export function WritingEditor({ initialContent, onContentChange }: WritingEditor
       Color,
       Highlight,
       Underline,
+      Placeholder.configure({
+        placeholder: 'Type your response here…',
+      }),
       SuggestionExtension.configure({
         suggestions,
         onHover: setHoveredSuggestion,
       }),
     ],
-    content: `
-      <p>Start typing your text here to see real-time grammar and writing suggestions...</p>
-      <p>This editor will analyze your writing for:</p>
-      <ul>
-        <li><strong>Spelling errors</strong> - highlighted in red</li>
-        <li><strong>Grammar issues</strong> - highlighted in blue for clarity</li>
-        <li><strong>Style improvements</strong> - highlighted in green for conciseness</li>
-        <li><strong>Readability issues</strong> - highlighted in purple</li>
-      </ul>
-      <p>Try typing some text with intentional mistakes to see the suggestions in action!</p>
-    `,
     editorProps: {
       attributes: {
         class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-2xl mx-auto focus:outline-none min-h-[400px] text-gray-900',
