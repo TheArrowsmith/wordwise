@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useSuggestions } from '@/contexts/SuggestionContext';
 import { SUGGESTION_LABELS, SUGGESTION_COLORS } from '@/types/suggestion';
+import { SuggestionBadges } from './SuggestionBadges';
 import { 
   ExclamationTriangleIcon,
   InformationCircleIcon,
@@ -48,6 +49,9 @@ export function SuggestionPanel() {
         <p className="text-sm text-gray-500 mt-1">
           {suggestions.length} suggestion{suggestions.length !== 1 ? 's' : ''} found
         </p>
+        <div className="mt-2">
+          <SuggestionBadges />
+        </div>
       </div>
       
       <div className="flex-1 overflow-y-auto">

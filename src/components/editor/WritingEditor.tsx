@@ -9,7 +9,6 @@ import Highlight from '@tiptap/extension-highlight';
 import Underline from '@tiptap/extension-underline';
 import { useSuggestions } from '@/contexts/SuggestionContext';
 import { SuggestionExtension } from './SuggestionExtension';
-import { SuggestionBadges } from './SuggestionBadges';
 import { 
   BoldIcon, 
   ItalicIcon,
@@ -155,10 +154,6 @@ export function WritingEditor({ initialContent, onContentChange }: WritingEditor
     <div className="flex-1 flex flex-col bg-white">
       {/* Editor Header */}
       <div className="border-b border-gray-200 p-4">
-        <div className="flex items-center justify-end mb-4">
-          <SuggestionBadges />
-        </div>
-        
         {/* Toolbar */}
         <div className="flex items-center space-x-2">
           <div className="flex items-center space-x-1 border-r border-gray-200 pr-3">

@@ -3,11 +3,13 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import CEFRSelector from '@/components/CEFRSelector';
+import NativeLanguageSelector from '@/components/NativeLanguageSelector';
 import ProtectedRoute from '@/components/ProtectedRoute';
 
 export default function Profile() {
   const [email, setEmail] = useState('');
   const [selectedLevel, setSelectedLevel] = useState('A1');
+  const [nativeLanguage, setNativeLanguage] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -25,7 +27,7 @@ export default function Profile() {
 
         const { data: profile, error } = await supabase
           .from('profiles')
-          .select('cefr_level')
+          .select('cefr_level, native_language')
           .eq('id', user.id)
           .single();
 
@@ -33,11 +35,13 @@ export default function Profile() {
           if (error.code === 'PGRST116') {
             // Profile doesn't exist yet, use default
             setSelectedLevel('A1');
+            setNativeLanguage('');
           } else {
             throw error;
           }
         } else {
           setSelectedLevel(profile.cefr_level || 'A1');
+          setNativeLanguage(profile.native_language || '');
         }
       } catch (error) {
         setError(error instanceof Error ? error.message : 'An error occurred');
@@ -66,6 +70,7 @@ export default function Profile() {
           {
             id: user.id,
             cefr_level: selectedLevel,
+            native_language: nativeLanguage,
             updated_at: new Date().toISOString(),
           },
           { onConflict: 'id' }
@@ -108,6 +113,17 @@ export default function Profile() {
                 value={email}
                 readOnly
                 className="block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-500 bg-gray-50 cursor-not-allowed"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-900 mb-4">
+                Your Native Language
+              </label>
+              <NativeLanguageSelector
+                value={nativeLanguage}
+                onChange={setNativeLanguage}
+                className="w-full"
               />
             </div>
 

@@ -4,10 +4,12 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import CEFRSelector from '@/components/CEFRSelector';
+import NativeLanguageSelector from '@/components/NativeLanguageSelector';
 import ProtectedRoute from '@/components/ProtectedRoute';
 
 export default function Onboarding() {
   const [selectedLevel, setSelectedLevel] = useState('A1');
+  const [nativeLanguage, setNativeLanguage] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [checkingProfile, setCheckingProfile] = useState(true);
@@ -55,6 +57,7 @@ export default function Onboarding() {
           {
             id: user.id,
             cefr_level: selectedLevel,
+            native_language: nativeLanguage,
           }
         ]);
 
@@ -85,11 +88,27 @@ export default function Onboarding() {
           </div>
           
           <form onSubmit={handleSubmit} className="space-y-8">
-            <CEFRSelector
-              selectedLevel={selectedLevel}
-              onLevelChange={setSelectedLevel}
-              className="w-full"
-            />
+            <div>
+              <label className="block text-sm font-medium text-gray-900 mb-4">
+                Your Native Language
+              </label>
+              <NativeLanguageSelector
+                value={nativeLanguage}
+                onChange={setNativeLanguage}
+                className="w-full"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-900 mb-4">
+                English Level (CEFR)
+              </label>
+              <CEFRSelector
+                selectedLevel={selectedLevel}
+                onLevelChange={setSelectedLevel}
+                className="w-full"
+              />
+            </div>
             
             {error && (
               <p className="text-red-500 text-center bg-red-50 p-3 rounded-md">
@@ -100,7 +119,7 @@ export default function Onboarding() {
             <div className="flex justify-center">
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || !nativeLanguage}
                 className="px-8 py-3 bg-indigo-600 text-white font-medium rounded-md hover:bg-indigo-700 disabled:bg-indigo-300 disabled:cursor-not-allowed"
               >
                 {loading ? 'Getting Started...' : 'Get Started'}

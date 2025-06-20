@@ -54,6 +54,7 @@ export interface EditorBlock {
 export interface Profile {
   id: string;
   cefr_level: CEFRLevel;
+  native_language: string | null;
   created_at: string;
   updated_at: string;
 }

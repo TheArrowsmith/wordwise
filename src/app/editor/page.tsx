@@ -6,7 +6,7 @@ import { ArrowPathIcon } from '@heroicons/react/24/outline';
 import { supabase } from '@/lib/supabase';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { Document, Prompt, Profile, User } from '@/types';
 import { SuggestionProvider } from '@/contexts/SuggestionContext';
 import { WritingEditor } from '@/components/editor/WritingEditor';
@@ -39,6 +39,7 @@ export default function EditorPage() {
   const [feedbackSuggestions, setFeedbackSuggestions] = useState<FeedbackSuggestion[]>([]);
   
   const searchParams = useSearchParams();
+  const router = useRouter();
   const documentId = searchParams.get('id');
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastSaveRef = useRef<number>(0);
@@ -222,6 +223,15 @@ export default function EditorPage() {
     loadRandomPrompt();
   };
 
+  const handleSignOut = async () => {
+    try {
+      await supabase.auth.signOut();
+      router.push('/auth/signin');
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
+
   return (
     <ProtectedRoute>
       <SuggestionProvider>
@@ -234,11 +244,17 @@ export default function EditorPage() {
                     <span className="text-xl font-semibold text-gray-900">WordWise</span>
                   </Link>
                 </div>
-                <div className="flex items-center">
+                <div className="flex items-center space-x-4">
                   <div className="text-sm text-gray-500">
                     {saveStatus === 'saving' && 'Saving...'}
                     {saveStatus === 'saved' && 'Saved'}
                   </div>
+                  <button
+                    onClick={handleSignOut}
+                    className="text-sm text-gray-600 hover:text-gray-900 font-medium"
+                  >
+                    Sign Out
+                  </button>
                 </div>
               </div>
             </div>
