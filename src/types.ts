@@ -97,6 +97,8 @@ export interface GradingSubmission {
   feedback_text: string | null;
   cefr_level_at_submission: string;
   status: 'processing' | 'complete' | 'failed';
+  raw_document_content: string | null;
+  raw_prompt_text: string | null;
 }
 
 // Extended types for joins and relationships

@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { openai } from '@/lib/openai';
 import { createClient } from '@supabase/supabase-js';
 
 // Create a Supabase client with service role key for bypassing RLS
@@ -33,13 +32,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Create initial submission record
+    // Create initial submission record, now including the raw content.
     const { data: submission, error: insertError } = await supabaseServiceRole
       .from('grading_submissions')
       .insert({
         document_id: documentId,
         user_id: user.id,
         cefr_level_at_submission: cefrLevel,
+        raw_document_content: documentContent,
+        raw_prompt_text: promptText,
         status: 'processing'
       })
       .select()
@@ -52,11 +53,8 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
-
-    // Start the grading process asynchronously
-    processGrading(submission.id, documentContent, promptText, cefrLevel);
-
-    // Return the submission ID immediately
+    
+    // Immediately return the submission ID
     return NextResponse.json({ submissionId: submission.id });
 
   } catch (error) {
@@ -65,77 +63,5 @@ export async function POST(request: NextRequest) {
       { error: 'Internal server error' },
       { status: 500 }
     );
-  }
-}
-
-// Async function to handle the grading process
-async function processGrading(submissionId: string, documentContent: string, promptText: string, cefrLevel: string) {
-  try {
-    // Construct the prompt for the LLM
-    const systemPrompt = `You are an experienced English language teacher evaluating a student's writing assignment. The student's current CEFR level is ${cefrLevel}.
-
-Please evaluate the following writing based on these criteria:
-- Grammar & Accuracy
-- Vocabulary & Word Choice  
-- Coherence & Structure
-- Task Achievement
-
-Consider the student's CEFR level when providing feedback - be appropriately challenging but supportive.
-
-You must format your response EXACTLY as follows:
-- First line: "GRADE: [A/B/C/D/F]"
-- Second line: blank
-- Remaining lines: Your detailed prose feedback
-
-Original prompt: "${promptText}"
-
-Student's writing:
-"${documentContent}"`;
-
-    const chatCompletion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [
-        {
-          role: 'system',
-          content: systemPrompt
-        }
-      ],
-      temperature: 0.7,
-      max_tokens: 1000
-    });
-
-    const fullResponse = chatCompletion.choices[0]?.message?.content || '';
-
-    // Parse the response to extract grade and feedback
-    const lines = fullResponse.trim().split('\n');
-    const gradeLine = lines[0];
-    const gradeMatch = gradeLine.match(/GRADE:\s*([A-F])/i);
-    const grade = gradeMatch ? gradeMatch[1].toUpperCase() : null;
-    
-    // Find the feedback text (everything after the blank line)
-    let feedbackStartIndex = 1;
-    while (feedbackStartIndex < lines.length && lines[feedbackStartIndex].trim() === '') {
-      feedbackStartIndex++;
-    }
-    const feedbackText = lines.slice(feedbackStartIndex).join('\n').trim();
-
-    // Update the submission with the results
-    await supabaseServiceRole
-      .from('grading_submissions')
-      .update({
-        grade,
-        feedback_text: feedbackText,
-        status: 'complete'
-      })
-      .eq('id', submissionId);
-
-  } catch (error) {
-    console.error('Error in grading process:', error);
-    
-    // Update submission status to failed
-    await supabaseServiceRole
-      .from('grading_submissions')
-      .update({ status: 'failed' })
-      .eq('id', submissionId);
   }
 } 
