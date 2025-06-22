@@ -11,7 +11,7 @@
   --secondary-color: #50C878; /* Green for positive feedback */
   --background-color: #F5F7FA; /* Light grayish-blue background */
   --text-color: #2D3748; /* Darker text for readability */
-  --accent-color: #F7A072; /* Warm orange for accents */
+  --accent-color: #FFA62A; /* Warm orange for accents */
 }
 
 @theme inline {

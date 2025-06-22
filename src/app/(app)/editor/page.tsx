@@ -376,25 +376,27 @@ export default function EditorPage() {
                 {/* Main Editor and Prompt Column */}
                 <div className="flex-grow lg:w-2/3 space-y-6">
                   {/* Prompt Section */}
-                  <div className="bg-white shadow-sm p-6">
-                    <div className="flex justify-between items-start mb-4">
-                      <div className="flex items-center gap-2">
-                        <h2 className="text-lg font-medium text-gray-900">Prompt</h2>
-                        {profile?.cefr_level && (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                            {profile.cefr_level.toUpperCase()}
-                          </span>
-                        )}
+                  <div className="bg-white shadow-sm overflow-hidden">
+                    <div className="bg-[var(--primary-color)] text-white px-6 py-3">
+                      <div className="flex justify-between items-center">
+                        <div className="flex items-center gap-2">
+                          <h2 className="text-lg font-medium">Prompt</h2>
+                          {profile?.cefr_level && (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-white/20 text-white">
+                              {profile.cefr_level.toUpperCase()}
+                            </span>
+                          )}
+                        </div>
+                        <button
+                          onClick={refreshPrompt}
+                          disabled={promptLoading}
+                          className="text-white/80 hover:text-white"
+                        >
+                          <ArrowPathIcon className={`h-5 w-5 ${promptLoading ? 'animate-spin' : ''}`} />
+                        </button>
                       </div>
-                      <button
-                        onClick={refreshPrompt}
-                        disabled={promptLoading}
-                        className="text-gray-400 hover:text-gray-600"
-                      >
-                        <ArrowPathIcon className={`h-5 w-5 ${promptLoading ? 'animate-spin' : ''}`} />
-                      </button>
                     </div>
-                    <div className="align-top">
+                    <div className="p-6">
                       {promptLoading ? (
                         <div className="ph-col-12 h-6 mt-2">
                           <div className="ph-row">
@@ -419,7 +421,7 @@ export default function EditorPage() {
                       <button
                         onClick={handleSubmitForGrading}
                         disabled={isSubmitting || !editorContent || !extractTextFromEditor(editorContent || {}).trim()}
-                        className="flex-grow bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-medium py-3 px-4 rounded-md transition-colors flex items-center justify-center"
+                        className="flex-grow bg-[var(--accent-color)] hover:bg-[var(--accent-color)]/90 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-medium py-3 px-4 rounded-md transition-colors flex items-center justify-center"
                       >
                         {isSubmitting ? (
                           <>
@@ -452,7 +454,7 @@ export default function EditorPage() {
                         {submissions.map((submission) => (
                           <div
                             key={submission.id}
-                            className="flex items-center justify-between p-3 bg-gray-50 rounded-md hover:bg-gray-100 transition-colors cursor-pointer"
+                            className="flex items-center justify-between p-3 bg-[var(--background-color)] rounded-md hover:bg-blue-50 transition-colors cursor-pointer border border-gray-200 hover:border-[var--primary-color)]/30"
                             onClick={() => router.push(`/feedback/${submission.id}`)}
                           >
                             <div className="flex items-center space-x-3">

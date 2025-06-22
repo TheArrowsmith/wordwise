@@ -28,35 +28,41 @@ export function SuggestionPanel() {
 
   if (suggestions.length === 0) {
     return (
-      <div className="w-80 bg-white shadow-sm p-6 flex flex-col items-center justify-center text-center">
-        <CheckCircleIcon className="h-12 w-12 text-green-500 mb-4" />
-        <h3 className="text-lg font-medium text-gray-900 mb-2">
-          No writing suggestions found
-        </h3>
-        <p className="text-sm text-gray-500">
-          Keep typing to see feedback!
-        </p>
+      <div className="w-80 bg-white shadow-sm flex flex-col">
+        <div className="bg-[var(--primary-color)] text-white p-4">
+          <h2 className="text-lg font-semibold">Feedback</h2>
+          <p className="text-sm text-white/80 mt-1">0 suggestions found</p>
+        </div>
+        <div className="p-6 flex flex-col items-center justify-center text-center">
+          <CheckCircleIcon className="h-12 w-12 text-[var(--secondary-color)] mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">
+            No writing suggestions found
+          </h3>
+          <p className="text-sm text-gray-500">
+            Keep typing to see feedback!
+          </p>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="w-80 bg-white shadow-sm flex flex-col">
-      <div className="p-4 border-b border-gray-200">
+      <div className="bg-[var(--primary-color)] text-white p-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-900">
+          <h2 className="text-lg font-semibold">
             Feedback
           </h2>
           {isLoading && (
-            <div className="animate-spin h-4 w-4 border border-gray-300 rounded-full border-t-transparent"></div>
+            <div className="animate-spin h-4 w-4 border border-white/30 rounded-full border-t-transparent"></div>
           )}
         </div>
-        <p className="text-sm text-gray-500 mt-1">
+        <p className="text-sm text-white/80 mt-1">
           {suggestions.length} suggestion{suggestions.length !== 1 ? 's' : ''} found
         </p>
-        <div className="mt-2">
-          <SuggestionBadges />
-        </div>
+      </div>
+      <div className="p-4 border-b border-gray-200">
+        <SuggestionBadges />
       </div>
       
       <div className="flex-1 overflow-y-auto">

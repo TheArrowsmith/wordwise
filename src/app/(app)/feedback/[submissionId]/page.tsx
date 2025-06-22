@@ -215,10 +215,10 @@ export default function FeedbackReportPage() {
 
         {/* Grade Display */}
         {grade && (
-          <div className="mb-8 p-6 bg-gray-50 rounded-lg">
+          <div className="mb-8 p-6 bg-gradient-to-br from-[var(--background-color)] to-blue-50 rounded-lg border border-[var(--primary-color)]/20">
             <div className="text-center">
-              <h2 className="text-lg font-medium text-gray-900 mb-2">Overall Grade</h2>
-              <div className={`text-6xl font-bold ${getGradeColor(grade)}`}>
+              <h2 className="text-lg font-medium text-[var(--primary-color)] mb-2">Overall Grade</h2>
+              <div className={`text-6xl font-bold ${getGradeColor(grade)} drop-shadow-lg`}>
                 {grade}
               </div>
             </div>
@@ -227,7 +227,7 @@ export default function FeedbackReportPage() {
 
         {/* Feedback Text */}
         <div className="mb-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Detailed Feedback</h2>
+          <h2 className="text-xl font-semibold text-[var(--secondary-color)] mb-4">Detailed Feedback</h2>
           <div className="prose prose-gray max-w-none">
             {isStreaming && !streamingText ? (
               <div className="flex items-center space-x-2">
@@ -251,7 +251,7 @@ export default function FeedbackReportPage() {
         <div className="flex justify-center pt-6 border-t border-gray-200">
           <button
             onClick={handleBackToEditor}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-md transition-colors"
+            className="bg-gradient-to-r from-[var(--primary-color)] to-[var(--accent-color)] hover:from-[var(--accent-color)] hover:to-[var(--primary-color)] text-white font-medium py-3 px-6 rounded-md transition-all duration-200 shadow-lg hover:shadow-xl"
           >
             Back to Editor
           </button>

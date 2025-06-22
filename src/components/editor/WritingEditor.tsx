@@ -158,8 +158,8 @@ export function WritingEditor({ initialContent, onContentChange }: WritingEditor
               onClick={() => setHeading(1)}
               className={`px-2 py-1 text-sm font-medium rounded ${
                 editor.isActive('heading', { level: 1 })
-                  ? 'bg-indigo-100 text-indigo-700'
-                  : 'text-gray-700 hover:bg-gray-100'
+                  ? 'bg-[var(--primary-color)] text-white'
+                  : 'text-gray-700 hover:bg-[var(--background-color)] hover:text-[var(--primary-color)]'
               }`}
             >
               H1
@@ -168,8 +168,8 @@ export function WritingEditor({ initialContent, onContentChange }: WritingEditor
               onClick={() => setHeading(2)}
               className={`px-2 py-1 text-sm font-medium rounded ${
                 editor.isActive('heading', { level: 2 })
-                  ? 'bg-indigo-100 text-indigo-700'
-                  : 'text-gray-700 hover:bg-gray-100'
+                  ? 'bg-[var(--primary-color)] text-white'
+                  : 'text-gray-700 hover:bg-[var(--background-color)] hover:text-[var(--primary-color)]'
               }`}
             >
               H2
@@ -178,8 +178,8 @@ export function WritingEditor({ initialContent, onContentChange }: WritingEditor
               onClick={() => setHeading(3)}
               className={`px-2 py-1 text-sm font-medium rounded ${
                 editor.isActive('heading', { level: 3 })
-                  ? 'bg-indigo-100 text-indigo-700'
-                  : 'text-gray-700 hover:bg-gray-100'
+                  ? 'bg-[var(--primary-color)] text-white'
+                  : 'text-gray-700 hover:bg-[var(--background-color)] hover:text-[var(--primary-color)]'
               }`}
             >
               H3
@@ -191,8 +191,8 @@ export function WritingEditor({ initialContent, onContentChange }: WritingEditor
               onClick={toggleBold}
               className={`p-2 rounded ${
                 editor.isActive('bold')
-                  ? 'bg-indigo-100 text-indigo-700'
-                  : 'text-gray-700 hover:bg-gray-100'
+                  ? 'bg-[var(--primary-color)] text-white'
+                  : 'text-gray-700 hover:bg-[var(--background-color)] hover:text-[var(--primary-color)]'
               }`}
             >
               <BoldIcon className="h-4 w-4" />
@@ -201,8 +201,8 @@ export function WritingEditor({ initialContent, onContentChange }: WritingEditor
               onClick={toggleItalic}
               className={`p-2 rounded ${
                 editor.isActive('italic')
-                  ? 'bg-indigo-100 text-indigo-700'
-                  : 'text-gray-700 hover:bg-gray-100'
+                  ? 'bg-[var(--primary-color)] text-white'
+                  : 'text-gray-700 hover:bg-[var(--background-color)] hover:text-[var(--primary-color)]'
               }`}
             >
               <ItalicIcon className="h-4 w-4" />
@@ -211,8 +211,8 @@ export function WritingEditor({ initialContent, onContentChange }: WritingEditor
               onClick={toggleUnderline}
               className={`p-2 rounded ${
                 editor.isActive('underline')
-                  ? 'bg-indigo-100 text-indigo-700'
-                  : 'text-gray-700 hover:bg-gray-100'
+                  ? 'bg-[var(--primary-color)] text-white'
+                  : 'text-gray-700 hover:bg-[var(--background-color)] hover:text-[var(--primary-color)]'
               }`}
             >
               <UnderlineIcon className="h-4 w-4" />
@@ -224,8 +224,8 @@ export function WritingEditor({ initialContent, onContentChange }: WritingEditor
               onClick={toggleBulletList}
               className={`p-2 rounded ${
                 editor.isActive('bulletList')
-                  ? 'bg-indigo-100 text-indigo-700'
-                  : 'text-gray-700 hover:bg-gray-100'
+                  ? 'bg-[var(--primary-color)] text-white'
+                  : 'text-gray-700 hover:bg-[var(--background-color)] hover:text-[var(--primary-color)]'
               }`}
             >
               <ListBulletIcon className="h-4 w-4" />
@@ -234,8 +234,8 @@ export function WritingEditor({ initialContent, onContentChange }: WritingEditor
               onClick={toggleOrderedList}
               className={`p-2 rounded ${
                 editor.isActive('orderedList')
-                  ? 'bg-indigo-100 text-indigo-700'
-                  : 'text-gray-700 hover:bg-gray-100'
+                  ? 'bg-[var(--primary-color)] text-white'
+                  : 'text-gray-700 hover:bg-[var(--background-color)] hover:text-[var(--primary-color)]'
               }`}
             >
               <NumberedListIcon className="h-4 w-4" />
