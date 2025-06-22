@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useDebounce } from 'use-debounce';
-import { ArrowPathIcon } from '@heroicons/react/24/outline';
+import { ArrowPathIcon, QuestionMarkCircleIcon } from '@heroicons/react/24/outline';
 import { supabase } from '@/lib/supabase';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Document, Prompt, Profile, User, GradingSubmission } from '@/types';
@@ -11,6 +11,7 @@ import { WritingEditor } from '@/components/editor/WritingEditor';
 import { SuggestionPanel } from '@/components/editor/SuggestionPanel';
 import { SuggestionTooltip } from '@/components/editor/SuggestionTooltip';
 import { DictionaryPanel } from '@/components/editor/DictionaryPanel';
+import { Tooltip } from '@/components/Tooltip';
 import 'placeholder-loading/dist/css/placeholder-loading.min.css';
 import React from 'react';
 
@@ -344,6 +345,29 @@ export default function EditorPage() {
     await fetchRandomPrompt(false);
   }, [fetchRandomPrompt]);
 
+  const gradingCriteriaContent = (
+    <div className="space-y-2">
+      <h4 className="font-semibold text-gray-900">Understanding Your Grade</h4>
+      <p className="text-gray-600">
+        Your writing will be evaluated on four key areas:
+      </p>
+      <ul className="list-disc list-inside space-y-1 text-gray-600">
+        <li>
+          <strong>Grammar & Accuracy:</strong> Are your sentences built correctly?
+        </li>
+        <li>
+          <strong>Vocabulary & Word Choice:</strong> Do you use the right words for your meaning?
+        </li>
+        <li>
+          <strong>Coherence & Structure:</strong> Is your writing easy to follow and well-organized?
+        </li>
+        <li>
+          <strong>Task Achievement:</strong> Did you fully answer the prompt?
+        </li>
+      </ul>
+    </div>
+  );
+
   return (
     <SuggestionProvider>
       <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
@@ -392,20 +416,33 @@ export default function EditorPage() {
                   {/* Submit for Grading Button */}
                   {currentDocument && (
                     <div className="bg-white rounded-lg shadow-sm p-6">
-                      <button
-                        onClick={handleSubmitForGrading}
-                        disabled={isSubmitting || !editorContent}
-                        className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-medium py-3 px-4 rounded-md transition-colors flex items-center justify-center"
-                      >
-                        {isSubmitting ? (
-                          <>
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                            Submitting for Grading...
-                          </>
-                        ) : (
-                          'Submit for Grading'
-                        )}
-                      </button>
+                      <div className="flex items-center space-x-3">
+                        <button
+                          onClick={handleSubmitForGrading}
+                          disabled={isSubmitting || !editorContent}
+                          className="flex-grow bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-medium py-3 px-4 rounded-md transition-colors flex items-center justify-center"
+                        >
+                          {isSubmitting ? (
+                            <>
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                              Submitting for Grading...
+                            </>
+                          ) : (
+                            'Submit for Grading'
+                          )}
+                        </button>
+                        <div className="relative flex-shrink-0">
+                          <Tooltip content={gradingCriteriaContent}>
+                            <button 
+                              type="button" 
+                              aria-label="Grading criteria information" 
+                              className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
+                            >
+                              <QuestionMarkCircleIcon className="h-6 w-6 text-gray-400 hover:text-gray-600 transition-colors" />
+                            </button>
+                          </Tooltip>
+                        </div>
+                      </div>
                     </div>
                   )}
 
