@@ -19,7 +19,7 @@ const SUGGESTION_ICONS = {
 };
 
 export function SuggestionPanel() {
-  const { suggestions, hoveredSuggestion, setHoveredSuggestion, isLoading } = useSuggestions();
+  const { suggestions, hoveredSuggestion, setHoveredSuggestion, isLoading, applySuggestion } = useSuggestions();
   const [showAll, setShowAll] = useState(false);
   
   // Apply progressive disclosure limits
@@ -84,41 +84,31 @@ export function SuggestionPanel() {
               >
                 <div className="flex items-start space-x-3">
                   <div
-                    className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center"
+                    className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center mt-0.5"
                     style={{ backgroundColor: SUGGESTION_COLORS[suggestion.type] }}
                   >
                     <Icon className="h-3 w-3 text-white" />
                   </div>
                   
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center space-x-2 mb-1">
-                      <span 
-                        className="text-xs font-medium px-2 py-0.5 rounded text-white"
-                        style={{ backgroundColor: SUGGESTION_COLORS[suggestion.type] }}
-                      >
-                        {SUGGESTION_LABELS[suggestion.type]}
-                      </span>
-                    </div>
+                    <span 
+                      className="text-xs font-semibold"
+                      style={{ color: SUGGESTION_COLORS[suggestion.type] }}
+                    >
+                      {SUGGESTION_LABELS[suggestion.type]}
+                    </span>
                     
-                    <p className="text-sm text-gray-700 mb-2">
+                    <p className="text-sm text-gray-700 mt-1">
                       {suggestion.message}
                     </p>
                     
-                    {suggestion.text && (
-                      <div className="text-xs text-gray-500 mb-1">
-                        <span className="font-medium">Original:</span> &quot;{suggestion.text}&quot;
-                      </div>
-                    )}
-                    
                     {suggestion.suggestions.length > 0 && (
-                      <div className="text-xs text-gray-600">
-                        <span className="font-medium">Suggestion:</span>
-                        <div className="mt-1">
-                          <div className="text-green-600">
-                            → {suggestion.suggestions[0]}
-                          </div>
-                        </div>
-                      </div>
+                      <button
+                        onClick={() => applySuggestion(suggestion.id)}
+                        className="mt-2 text-sm font-medium text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-md transition-colors w-full text-left"
+                      >
+                        Apply suggestion: <span className="font-semibold">{suggestion.suggestions[0]}</span>
+                      </button>
                     )}
                   </div>
                 </div>

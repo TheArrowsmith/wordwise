@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
+import { Editor } from '@tiptap/react';
 import { Suggestion, SuggestionCounts, AnalysisResponse } from '@/types/suggestion';
 
 interface SuggestionContextType {
@@ -8,11 +9,14 @@ interface SuggestionContextType {
   suggestionCounts: SuggestionCounts;
   isLoading: boolean;
   hoveredSuggestion: string | null;
+  editor: Editor | null;
   setSuggestions: (suggestions: Suggestion[]) => void;
   setIsLoading: (loading: boolean) => void;
   setHoveredSuggestion: (id: string | null) => void;
   analyzText: (document: object) => Promise<void>;
   cancelAnalysis: () => void;
+  registerEditor: (editor: Editor) => void;
+  applySuggestion: (suggestionId: string) => void;
 }
 
 const SuggestionContext = createContext<SuggestionContextType | undefined>(undefined);
@@ -21,6 +25,7 @@ export function SuggestionProvider({ children }: { children: React.ReactNode }) 
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hoveredSuggestion, setHoveredSuggestion] = useState<string | null>(null);
+  const [editor, setEditor] = useState<Editor | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const suggestionCounts: SuggestionCounts = {
@@ -36,6 +41,28 @@ export function SuggestionProvider({ children }: { children: React.ReactNode }) 
       abortControllerRef.current = null;
     }
   }, []);
+
+  const registerEditor = useCallback((editorInstance: Editor) => {
+    setEditor(editorInstance);
+  }, []);
+
+  const applySuggestion = useCallback((suggestionId: string) => {
+    if (!editor) return;
+
+    const suggestionToApply = suggestions.find(s => s.id === suggestionId);
+    if (!suggestionToApply || suggestionToApply.suggestions.length === 0) return;
+
+    const { position } = suggestionToApply;
+    const replacementText = suggestionToApply.suggestions[0];
+
+    // Apply the change in the editor
+    editor.chain().focus()
+      .insertContentAt({ from: position.start, to: position.end }, replacementText)
+      .run();
+
+    // Remove the applied suggestion from the list
+    setSuggestions(prev => prev.filter(s => s.id !== suggestionId));
+  }, [editor, suggestions]);
 
   const analyzText = useCallback(async (document: object) => {
     if (!document || Object.keys(document).length === 0) {
@@ -93,11 +120,14 @@ export function SuggestionProvider({ children }: { children: React.ReactNode }) 
         suggestionCounts,
         isLoading,
         hoveredSuggestion,
+        editor,
         setSuggestions,
         setIsLoading,
         setHoveredSuggestion,
         analyzText,
         cancelAnalysis,
+        registerEditor,
+        applySuggestion,
       }}
     >
       {children}

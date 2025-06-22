@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { useEditor, EditorContent } from '@tiptap/react';
+import { useEditor, EditorContent, Editor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import TextStyle from '@tiptap/extension-text-style';
 import Color from '@tiptap/extension-color';
@@ -24,7 +24,7 @@ interface WritingEditorProps {
 }
 
 export function WritingEditor({ initialContent, onContentChange }: WritingEditorProps) {
-  const { suggestions, analyzText, setHoveredSuggestion, setSuggestions } = useSuggestions();
+  const { suggestions, analyzText, setHoveredSuggestion, setSuggestions, registerEditor } = useSuggestions();
   const debounceRef = useRef<NodeJS.Timeout | undefined>(undefined);
   const [isContentLoaded, setIsContentLoaded] = useState(false);
   const [wordCount, setWordCount] = useState(0);
@@ -81,6 +81,13 @@ export function WritingEditor({ initialContent, onContentChange }: WritingEditor
       }
     },
   });
+
+  // Register the editor instance with the context
+  useEffect(() => {
+    if (editor) {
+      registerEditor(editor);
+    }
+  }, [editor, registerEditor]);
 
   // Handle initial content
   useEffect(() => {
