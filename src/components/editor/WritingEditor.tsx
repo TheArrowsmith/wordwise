@@ -148,7 +148,7 @@ export function WritingEditor({ initialContent, onContentChange }: WritingEditor
   }
 
   return (
-    <div className="flex-1 flex flex-col bg-white">
+    <div className="flex-1 flex flex-col bg-white shadow-sm">
       {/* Editor Header */}
       <div className="border-b border-gray-200 p-4">
         {/* Toolbar */}

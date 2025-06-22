@@ -376,7 +376,7 @@ export default function EditorPage() {
                 {/* Main Editor and Prompt Column */}
                 <div className="flex-grow lg:w-2/3 space-y-6">
                   {/* Prompt Section */}
-                  <div className="bg-white rounded-lg shadow-sm p-6">
+                  <div className="bg-white shadow-sm p-6">
                     <div className="flex justify-between items-start mb-4">
                       <div className="flex items-center gap-2">
                         <h2 className="text-lg font-medium text-gray-900">Prompt</h2>
@@ -415,7 +415,7 @@ export default function EditorPage() {
 
                   {/* Submit for Grading Button */}
                   {currentDocument && (
-                    <div className="bg-white rounded-lg shadow-sm p-6">
+                    <div className="bg-white shadow-sm p-6">
                       <div className="flex items-center space-x-3">
                         <button
                           onClick={handleSubmitForGrading}
@@ -448,7 +448,7 @@ export default function EditorPage() {
 
                   {/* Submission History */}
                   {submissions.length > 0 && (
-                    <div className="bg-white rounded-lg shadow-sm p-6">
+                    <div className="bg-white shadow-sm p-6">
                       <h3 className="text-lg font-medium text-gray-900 mb-4">Grading History</h3>
                       <div className="space-y-3">
                         {submissions.map((submission) => (

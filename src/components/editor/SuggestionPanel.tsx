@@ -28,7 +28,7 @@ export function SuggestionPanel() {
 
   if (suggestions.length === 0) {
     return (
-      <div className="w-80 bg-white border-l border-gray-200 p-6 flex flex-col items-center justify-center text-center">
+      <div className="w-80 bg-white shadow-sm p-6 flex flex-col items-center justify-center text-center">
         <CheckCircleIcon className="h-12 w-12 text-green-500 mb-4" />
         <h3 className="text-lg font-medium text-gray-900 mb-2">
           No writing suggestions found
@@ -41,7 +41,7 @@ export function SuggestionPanel() {
   }
 
   return (
-    <div className="w-80 bg-white border-l border-gray-200 flex flex-col">
+    <div className="w-80 bg-white shadow-sm flex flex-col">
       <div className="p-4 border-b border-gray-200">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold text-gray-900">

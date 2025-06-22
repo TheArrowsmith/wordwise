@@ -94,7 +94,7 @@ export default function Profile() {
 
   return (
     <div className="flex min-h-screen items-center justify-center px-4 py-8">
-        <div className="w-full max-w-2xl space-y-8 rounded-lg bg-white p-8 shadow-md">
+        <div className="w-full max-w-2xl space-y-8 bg-white p-8 shadow-md">
           <div className="text-center">
             <h1 className="text-3xl font-bold text-gray-900">Profile</h1>
             <p className="mt-2 text-lg text-gray-600">Manage your learning preferences</p>

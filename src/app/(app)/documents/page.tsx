@@ -255,7 +255,7 @@ export default function DocumentsPage() {
                 </Link>
               </div>
             ) : (
-              <div className="bg-white shadow overflow-hidden sm:rounded-md">
+              <div className="bg-white shadow overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full border-collapse">
                     <thead className="bg-gray-50">
