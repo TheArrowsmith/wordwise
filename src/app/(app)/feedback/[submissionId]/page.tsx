@@ -251,7 +251,7 @@ export default function FeedbackReportPage() {
         <div className="flex justify-center pt-6 border-t border-gray-200">
           <button
             onClick={handleBackToEditor}
-            className="bg-gradient-to-r from-[var(--primary-color)] to-[var(--accent-color)] hover:from-[var(--accent-color)] hover:to-[var(--primary-color)] text-white font-medium py-3 px-6 rounded-md transition-all duration-200 shadow-lg hover:shadow-xl"
+            className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition-colors"
           >
             Back to Editor
           </button>

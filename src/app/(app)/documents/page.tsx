@@ -170,7 +170,7 @@ export default function DocumentsPage() {
     if (user) {
       fetchDocuments();
     }
-  }, [user, page, sortField, sortDirection]);
+  }, [user, page, sortField, sortDirection, fetchDocuments]);
 
   const handleSort = (field: SortField) => {
     const newDirection = sortField === field && sortDirection === 'asc' ? 'desc' : 'asc';

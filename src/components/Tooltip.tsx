@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import {
   useFloating,
   autoUpdate,
@@ -22,7 +22,6 @@ interface TooltipProps {
 
 export function Tooltip({ children, content }: TooltipProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const arrowRef = useRef<HTMLDivElement>(null);
 
   const { refs, floatingStyles, context } = useFloating({
     open: isOpen,
@@ -56,7 +55,7 @@ export function Tooltip({ children, content }: TooltipProps) {
 
   return (
     <>
-      {React.cloneElement(children, getReferenceProps({ ref: refs.setReference, ...(children.props as any) }))}
+      {React.cloneElement(children, getReferenceProps({ ref: refs.setReference, ...(children.props || {}) }))}
       {isOpen && (
         <div
           ref={refs.setFloating}
