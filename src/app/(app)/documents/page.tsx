@@ -1,9 +1,12 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 import { DocumentWithPromptPartial, User, EditorBlock, CEFRLevel } from '@/types';
+import Pagination from '@/components/Pagination';
+import Icon from '@/components/Icon';
 
 type SortField = 'title' | 'cefr_level' | 'created_at' | 'updated_at';
 type SortDirection = 'asc' | 'desc';
@@ -22,11 +25,19 @@ type DocumentQueryResult = {
 };
 
 export default function DocumentsPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Read state from URL or set defaults
+  const page = parseInt(searchParams.get('page') || '1', 10);
+  const sortField = (searchParams.get('sortField') as SortField) || 'updated_at';
+  const sortDirection = (searchParams.get('sortDirection') as SortDirection) || 'desc';
+
   const [documents, setDocuments] = useState<DocumentWithPromptPartial[]>([]);
   const [loading, setLoading] = useState(true);
-  const [sortField, setSortField] = useState<SortField>('updated_at');
-  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [user, setUser] = useState<User | null>(null);
+  const [totalDocuments, setTotalDocuments] = useState(0);
+  const itemsPerPage = 10;
 
   useEffect(() => {
     const getUser = async () => {
@@ -35,67 +46,6 @@ export default function DocumentsPage() {
     };
     getUser();
   }, []);
-
-  const fetchDocuments = useCallback(async () => {
-    if (!user) return;
-    
-    setLoading(true);
-    
-    const { data, error } = await supabase
-      .from('documents')
-      .select(`
-        id,
-        content,
-        created_at,
-        updated_at,
-        prompt_id,
-        prompts!prompt_id (
-          cefr_level,
-          text
-        )
-      `)
-      .eq('user_id', user.id)
-      .order(sortField === 'title' ? 'content' : sortField === 'cefr_level' ? 'prompts(cefr_level)' : sortField, 
-             { ascending: sortDirection === 'asc' });
-
-    if (error) {
-      console.error('Error fetching documents:', error);
-    } else {
-      // Transform data to match expected interface
-      const transformedData = (data || []).map((doc: DocumentQueryResult): DocumentWithPromptPartial => ({
-        id: doc.id,
-        user_id: user.id,
-        content: doc.content,
-        created_at: doc.created_at,
-        updated_at: doc.updated_at,
-        prompt_id: doc.prompt_id,
-        prompts: Array.isArray(doc.prompts) ? (doc.prompts.length > 0 ? doc.prompts[0] : null) : doc.prompts
-      }));
-      setDocuments(transformedData);
-    }
-    
-    setLoading(false);
-  }, [user, sortField, sortDirection]);
-
-  useEffect(() => {
-    if (user) {
-      fetchDocuments();
-    }
-  }, [user, fetchDocuments]);
-
-  const handleSort = (field: SortField) => {
-    if (sortField === field) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortField(field);
-      setSortDirection('asc');
-    }
-  };
-
-  const handleDocumentClick = (document: DocumentWithPromptPartial) => {
-    // Navigate to editor with document ID as URL parameter
-    window.location.href = `/editor?id=${document.id}`;
-  };
 
   const extractTextFromEditorContent = (content: string) => {
     try {
@@ -129,45 +79,146 @@ export default function DocumentsPage() {
     }
   };
 
+  const fetchDocuments = useCallback(async () => {
+    if (!user) return;
+    
+    setLoading(true);
+    
+    // For title and cefr_level sorting, we need to fetch all documents and sort client-side
+    // For created_at and updated_at, we can use database sorting with pagination
+    const needsClientSorting = sortField === 'title' || sortField === 'cefr_level';
+    
+    let query = supabase
+      .from('documents')
+      .select(`
+        id,
+        content,
+        created_at,
+        updated_at,
+        prompt_id,
+        prompts!prompt_id (
+          cefr_level,
+          text
+        )
+      `, { count: 'exact' })
+      .eq('user_id', user.id);
+
+    // Apply database sorting and pagination only for database fields
+    if (!needsClientSorting) {
+      const from = (page - 1) * itemsPerPage;
+      const to = from + itemsPerPage - 1;
+      query = query
+        .order(sortField, { ascending: sortDirection === 'asc' })
+        .range(from, to);
+    }
+
+    const { data, error, count } = await query;
+
+    if (error) {
+      console.error('Error fetching documents:', error);
+      setDocuments([]);
+      setTotalDocuments(0);
+    } else {
+      // Transform data to match expected interface
+      let transformedData = (data || []).map((doc: DocumentQueryResult): DocumentWithPromptPartial => ({
+        id: doc.id,
+        user_id: user.id,
+        content: doc.content,
+        created_at: doc.created_at,
+        updated_at: doc.updated_at,
+        prompt_id: doc.prompt_id,
+        prompts: Array.isArray(doc.prompts) ? (doc.prompts.length > 0 ? doc.prompts[0] : null) : doc.prompts
+      }));
+
+      // Apply client-side sorting for title and cefr_level
+      if (needsClientSorting) {
+        transformedData = transformedData.sort((a, b) => {
+          let aValue, bValue;
+          
+          switch (sortField) {
+            case 'title':
+              aValue = extractTextFromEditorContent(a.content).toLowerCase();
+              bValue = extractTextFromEditorContent(b.content).toLowerCase();
+              break;
+            case 'cefr_level':
+              aValue = a.prompts?.cefr_level || '';
+              bValue = b.prompts?.cefr_level || '';
+              break;
+            default:
+              return 0;
+          }
+          
+          if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+          if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+          return 0;
+        });
+
+        // Apply pagination after sorting
+        const from = (page - 1) * itemsPerPage;
+        const to = from + itemsPerPage;
+        transformedData = transformedData.slice(from, to);
+      }
+
+      setDocuments(transformedData);
+      setTotalDocuments(count || 0);
+    }
+    
+    setLoading(false);
+  }, [user, page, sortField, sortDirection]);
+
+  useEffect(() => {
+    if (user) {
+      fetchDocuments();
+    }
+  }, [user, page, sortField, sortDirection]);
+
+  const handleSort = (field: SortField) => {
+    const newDirection = sortField === field && sortDirection === 'asc' ? 'desc' : 'asc';
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('sortField', field);
+    params.set('sortDirection', newDirection);
+    params.set('page', '1'); // Reset to the first page when sorting
+    router.push(`?${params.toString()}`);
+  };
+
+  const handlePageChange = (newPage: number) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('page', newPage.toString());
+    router.push(`?${params.toString()}`);
+  };
+
+  const handleDelete = async (e: React.MouseEvent, docId: string) => {
+    e.stopPropagation(); // VERY IMPORTANT: Prevent row click navigation
+
+    if (window.confirm('Are you sure you want to delete this document? This action cannot be undone.')) {
+      try {
+        const { error } = await supabase.from('documents').delete().eq('id', docId);
+        if (error) throw error;
+        
+        // Remove document from local state to update UI instantly
+        setDocuments(prevDocs => prevDocs.filter(doc => doc.id !== docId));
+        setTotalDocuments(prevTotal => prevTotal - 1);
+
+      } catch (error) {
+        console.error('Error deleting document:', error);
+        alert('Failed to delete document. Please try again.');
+      }
+    }
+  };
+
+  const handleDocumentClick = (document: DocumentWithPromptPartial) => {
+    // Navigate to editor with document ID as URL parameter
+    window.location.href = `/editor?id=${document.id}`;
+  };
+
   const getTitle = (content: string) => {
     const text = extractTextFromEditorContent(content);
     return text.slice(0, 50) + (text.length > 50 ? '...' : '');
   };
 
-
-
   const formatDateTime = (dateString: string) => {
     return new Date(dateString).toLocaleString();
   };
-
-  const sortedDocuments = [...documents].sort((a, b) => {
-    let aValue, bValue;
-    
-    switch (sortField) {
-      case 'title':
-        aValue = extractTextFromEditorContent(a.content).toLowerCase();
-        bValue = extractTextFromEditorContent(b.content).toLowerCase();
-        break;
-      case 'cefr_level':
-        aValue = a.prompts?.cefr_level || '';
-        bValue = b.prompts?.cefr_level || '';
-        break;
-      case 'created_at':
-        aValue = new Date(a.created_at).getTime();
-        bValue = new Date(b.created_at).getTime();
-        break;
-      case 'updated_at':
-        aValue = new Date(a.updated_at).getTime();
-        bValue = new Date(b.updated_at).getTime();
-        break;
-      default:
-        return 0;
-    }
-    
-    if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
-    if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
-    return 0;
-  });
 
   const SortIcon = ({ field }: { field: SortField }) => {
     if (sortField !== field) {
@@ -245,10 +296,15 @@ export default function DocumentsPage() {
                             <SortIcon field="updated_at" />
                           </div>
                         </th>
+                        <th 
+                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        >
+                          <span>Actions</span>
+                        </th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {sortedDocuments.map((document) => (
+                      {documents.map((document) => (
                         <tr 
                           key={document.id}
                           className="hover:bg-gray-50 cursor-pointer"
@@ -270,11 +326,26 @@ export default function DocumentsPage() {
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             {formatDateTime(document.updated_at)}
                           </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <button
+                              onClick={(e) => handleDelete(e, document.id)}
+                              className="text-red-600 hover:text-red-900 p-1 rounded-full hover:bg-red-100"
+                              title="Delete document"
+                            >
+                              <Icon name="trash" size="sm" />
+                            </button>
+                          </td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
+                <Pagination
+                  currentPage={page}
+                  totalItems={totalDocuments}
+                  itemsPerPage={itemsPerPage}
+                  onPageChange={handlePageChange}
+                />
               </div>
             )}
           </div>
