@@ -50,7 +50,7 @@ export function WritingEditor({ initialContent, onContentChange }: WritingEditor
     ],
     editorProps: {
       attributes: {
-        class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-2xl mx-auto focus:outline-none min-h-[400px] text-gray-900',
+        class: 'mx-auto focus:outline-none min-h-[400px] text-gray-900 text-base leading-relaxed',
         spellcheck: "false",
       },
     },

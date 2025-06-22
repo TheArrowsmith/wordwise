@@ -1,5 +1,7 @@
 'use client';
 
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
@@ -178,19 +180,21 @@ export default function FeedbackReportPage() {
         {/* Feedback Text */}
         <div className="mb-8">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Detailed Feedback</h2>
-          <div className="prose max-w-none">
+          <div className="prose prose-gray max-w-none">
             {isStreaming && !streamingText ? (
               <div className="flex items-center space-x-2">
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
                 <span className="text-gray-600">Generating feedback...</span>
               </div>
             ) : (
-              <div className="whitespace-pre-wrap text-gray-800 leading-relaxed">
-                {streamingText || submission.feedback_text || 'No feedback available yet.'}
+              <>
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  {streamingText || submission.feedback_text || 'No feedback available yet.'}
+                </ReactMarkdown>
                 {isStreaming && (
                   <span className="inline-block w-2 h-5 bg-blue-600 animate-pulse ml-1"></span>
                 )}
-              </div>
+              </>
             )}
           </div>
         </div>
