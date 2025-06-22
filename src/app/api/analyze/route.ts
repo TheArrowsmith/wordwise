@@ -68,7 +68,9 @@ export async function POST(request: NextRequest) {
         if (text) {
           // Nspell (Spelling) Analysis
           const words = text.match(/\b[A-Za-z]+\b/g) || [];
-          for (const word of words) {
+          const uniqueWords = [...new Set(words)]; // Get unique words from the text block
+
+          for (const word of uniqueWords) {
             if (!spell.correct(word)) {
               let match;
               const regex = new RegExp(`\\b${word}\\b`, 'g');
