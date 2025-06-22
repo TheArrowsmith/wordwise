@@ -44,6 +44,12 @@ export default function EditorPage() {
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastSaveRef = useRef<number>(0);
 
+  // Keep a ref to the current document to avoid stale closures in handleAutoSave
+  const documentRef = useRef(currentDocument);
+  useEffect(() => {
+    documentRef.current = currentDocument;
+  }, [currentDocument]);
+
   const handleContentChange = useCallback((content: object) => {
     setEditorContent(content);
     if (!isInitialLoad) {
@@ -94,7 +100,8 @@ export default function EditorPage() {
     }
   }, [user]);
 
-  const loadRandomPrompt = useCallback(async () => {
+  // Shared function to fetch a random prompt
+  const fetchRandomPrompt = useCallback(async (setInitialLoad = false) => {
     if (!profile) return;
     setPromptLoading(true);
 
@@ -114,9 +121,15 @@ export default function EditorPage() {
       console.error('Error loading prompt:', error);
     } finally {
       setPromptLoading(false);
-      setIsInitialLoad(false);
+      if (setInitialLoad) {
+        setIsInitialLoad(false);
+      }
     }
   }, [profile]);
+
+  const loadRandomPrompt = useCallback(async () => {
+    await fetchRandomPrompt(true);
+  }, [fetchRandomPrompt]);
 
   const handleAutoSave = useCallback(async () => {
     if (!user || !prompt || !editorContent) return;
@@ -139,12 +152,13 @@ export default function EditorPage() {
     try {
       const contentString = JSON.stringify(editorContent);
 
-      if (currentDocument) {
+      // Use the ref to get the most current document state
+      if (documentRef.current) {
         // Update existing document
         const { error } = await supabase
           .from('documents')
           .update({ content: contentString, updated_at: new Date().toISOString() })
-          .eq('id', currentDocument.id);
+          .eq('id', documentRef.current.id);
 
         if (error) throw error;
       } else {
@@ -159,8 +173,8 @@ export default function EditorPage() {
 
         if (data) {
           setCurrentDocument(data);
-          // Update URL without reloading page
-          window.history.replaceState({}, '', `/editor?id=${data.id}`);
+          // Use Next.js router to update URL without a full re-fetch/re-render cycle
+          router.replace(`/editor?id=${data.id}`, { scroll: false });
         }
       }
 
@@ -170,7 +184,7 @@ export default function EditorPage() {
       console.error('Error saving document:', error);
       setSaveStatus('idle');
     }
-  }, [user, prompt, editorContent, currentDocument]);
+  }, [user, prompt, editorContent, router]);
 
   // Load submissions for the current document
   const loadSubmissions = useCallback(async () => {
@@ -293,16 +307,23 @@ export default function EditorPage() {
     getUser();
   }, []);
 
-  // Load document or random prompt
+  // This logic is now more robust to prevent re-fetching after a new document save.
   useEffect(() => {
     if (!user || !profile) return;
 
     if (documentId) {
-      loadDocument(documentId);
+      // Only load the document if the component's state doesn't already match the URL.
+      // This prevents a re-fetch after we've just created a new document and updated the state/URL.
+      if (!currentDocument || currentDocument.id !== documentId) {
+        loadDocument(documentId);
+      }
     } else {
-      loadRandomPrompt();
+      // Only load a random prompt if we don't already have one.
+      if (!prompt) {
+        loadRandomPrompt();
+      }
     }
-  }, [user, profile, documentId, loadDocument, loadRandomPrompt]);
+  }, [user, profile, documentId, currentDocument, prompt, loadDocument, loadRandomPrompt]);
 
   // Load submissions when document changes
   useEffect(() => {
@@ -319,12 +340,9 @@ export default function EditorPage() {
     }
   }, [debouncedEditorContent, isInitialLoad, hasUnsavedChanges, editorContent, user, handleAutoSave]);
 
-  const refreshPrompt = () => {
-    if (!profile) return;
-    setPrompt(null);
-    setPromptLoading(true);
-    loadRandomPrompt();
-  };
+  const refreshPrompt = useCallback(async () => {
+    await fetchRandomPrompt(false);
+  }, [fetchRandomPrompt]);
 
   return (
     <SuggestionProvider>
