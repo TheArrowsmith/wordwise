@@ -414,37 +414,35 @@ export default function EditorPage() {
                   />
 
                   {/* Submit for Grading Button */}
-                  {currentDocument && (
-                    <div className="bg-white shadow-sm p-6">
-                      <div className="flex items-center space-x-3">
-                        <button
-                          onClick={handleSubmitForGrading}
-                          disabled={isSubmitting || !editorContent}
-                          className="flex-grow bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-medium py-3 px-4 rounded-md transition-colors flex items-center justify-center"
-                        >
-                          {isSubmitting ? (
-                            <>
-                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                              Submitting for Grading...
-                            </>
-                          ) : (
-                            'Submit for Grading'
-                          )}
-                        </button>
-                        <div className="relative flex-shrink-0">
-                          <Tooltip content={gradingCriteriaContent}>
-                            <button 
-                              type="button" 
-                              aria-label="Grading criteria information" 
-                              className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
-                            >
-                              <QuestionMarkCircleIcon className="h-6 w-6 text-gray-400 hover:text-gray-600 transition-colors" />
-                            </button>
-                          </Tooltip>
-                        </div>
+                  <div className="bg-white shadow-sm p-6">
+                    <div className="flex items-center space-x-3">
+                      <button
+                        onClick={handleSubmitForGrading}
+                        disabled={isSubmitting || !editorContent || !extractTextFromEditor(editorContent || {}).trim()}
+                        className="flex-grow bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-medium py-3 px-4 rounded-md transition-colors flex items-center justify-center"
+                      >
+                        {isSubmitting ? (
+                          <>
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                            Submitting for Grading...
+                          </>
+                        ) : (
+                          'Submit for Grading'
+                        )}
+                      </button>
+                      <div className="relative flex-shrink-0">
+                        <Tooltip content={gradingCriteriaContent}>
+                          <button 
+                            type="button" 
+                            aria-label="Grading criteria information" 
+                            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
+                          >
+                            <QuestionMarkCircleIcon className="h-6 w-6 text-gray-400 hover:text-gray-600 transition-colors" />
+                          </button>
+                        </Tooltip>
                       </div>
                     </div>
-                  )}
+                  </div>
 
                   {/* Submission History */}
                   {submissions.length > 0 && (
